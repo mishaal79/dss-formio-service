@@ -1,0 +1,138 @@
+# Community Edition Service Outputs
+output "formio_community_service_url" {
+  description = "URL of the deployed Form.io Community service"
+  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_url : null
+}
+
+output "formio_community_service_name" {
+  description = "Name of the Community Cloud Run service"
+  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_name : null
+}
+
+output "formio_community_admin_url" {
+  description = "Form.io Community admin portal URL"
+  value       = var.deploy_community && var.portal_enabled && length(module.formio-community) > 0 ? "${module.formio-community[0].service_url}/admin" : null
+}
+
+# Enterprise Edition Service Outputs
+output "formio_enterprise_service_url" {
+  description = "URL of the deployed Form.io Enterprise service"
+  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].service_url : null
+}
+
+output "formio_enterprise_service_name" {
+  description = "Name of the Enterprise Cloud Run service"
+  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].service_name : null
+}
+
+output "formio_enterprise_admin_url" {
+  description = "Form.io Enterprise admin portal URL"
+  value       = var.deploy_enterprise && var.portal_enabled && length(module.formio-enterprise) > 0 ? "${module.formio-enterprise[0].service_url}/admin" : null
+}
+
+output "mongodb_connection_string" {
+  description = "MongoDB connection string for Form.io"
+  value       = module.mongodb.mongodb_connection_string
+  sensitive   = true
+}
+
+output "mongodb_instance_name" {
+  description = "Name of the MongoDB Compute Engine instance"
+  value       = module.mongodb.mongodb_instance_name
+}
+
+output "mongodb_private_ip" {
+  description = "Private IP address of the MongoDB instance"
+  value       = module.mongodb.mongodb_private_ip
+}
+
+output "mongodb_database_name" {
+  description = "Name of the MongoDB database for Form.io"
+  value       = module.mongodb.mongodb_database_name
+}
+
+output "storage_bucket_name" {
+  description = "Name of the GCS bucket for file storage"
+  value       = module.storage.bucket_name
+}
+
+output "project_id" {
+  description = "GCP Project ID"
+  value       = var.project_id
+}
+
+output "region" {
+  description = "GCP Region"
+  value       = var.region
+}
+
+output "environment" {
+  description = "Environment name"
+  value       = var.environment
+}
+
+# Legacy Compatibility Outputs (deprecated)
+output "formio_service_url" {
+  description = "DEPRECATED: Use formio_enterprise_service_url or formio_community_service_url"
+  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].service_url : (var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_url : null)
+}
+
+output "formio_admin_url" {
+  description = "DEPRECATED: Use formio_enterprise_admin_url or formio_community_admin_url"
+  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? "${module.formio-enterprise[0].service_url}/admin" : (var.deploy_community && length(module.formio-community) > 0 ? "${module.formio-community[0].service_url}/admin" : null)
+}
+
+# Deployment Summary
+output "deployed_services" {
+  description = "Summary of deployed Form.io services"
+  value = {
+    community_deployed  = var.deploy_community
+    enterprise_deployed = var.deploy_enterprise
+    community_url      = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_url : null
+    enterprise_url     = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].service_url : null
+  }
+}
+
+output "vpc_connector_id" {
+  description = "VPC Connector ID being used (shared or local)"
+  value       = var.shared_vpc_connector_id != null ? var.shared_vpc_connector_id : (length(module.networking) > 0 ? module.networking[0].vpc_connector_id : null)
+}
+
+output "shared_infrastructure_details" {
+  description = "Details about shared infrastructure integration"
+  value = {
+    using_shared_infra = var.shared_vpc_id != null
+    shared_vpc_id      = var.shared_vpc_id
+    shared_subnet_ids  = var.shared_subnet_ids
+    vpc_connector_id   = var.shared_vpc_connector_id != null ? var.shared_vpc_connector_id : (length(module.networking) > 0 ? module.networking[0].vpc_connector_id : null)
+  }
+}
+
+output "using_shared_infrastructure" {
+  description = "Whether shared infrastructure is being used"
+  value       = var.shared_vpc_id != null
+}
+
+# Secret Manager Outputs
+output "secret_manager_secrets" {
+  description = "Secret Manager secret IDs for use by other modules"
+  value = {
+    formio_root_password_secret_id    = google_secret_manager_secret.formio_root_password.secret_id
+    formio_jwt_secret_secret_id       = google_secret_manager_secret.formio_jwt_secret.secret_id
+    formio_db_secret_secret_id        = google_secret_manager_secret.formio_db_secret.secret_id
+    mongodb_admin_password_secret_id  = google_secret_manager_secret.mongodb_admin_password.secret_id
+    mongodb_formio_password_secret_id = google_secret_manager_secret.mongodb_formio_password.secret_id
+  }
+}
+
+# Sensitive outputs for debugging (DO NOT USE IN PRODUCTION)
+output "secret_validation" {
+  description = "Secret validation info (lengths only, for security verification)"
+  value = {
+    formio_root_password_length    = length(random_password.formio_root_password.result)
+    formio_jwt_secret_length       = length(random_password.formio_jwt_secret.result)
+    formio_db_secret_length        = length(random_password.formio_db_secret.result)
+    mongodb_admin_password_length  = length(random_password.mongodb_admin_password.result)
+    mongodb_formio_password_length = length(random_password.mongodb_formio_password.result)
+  }
+}

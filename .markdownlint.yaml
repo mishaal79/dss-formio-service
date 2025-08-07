@@ -1,0 +1,57 @@
+# Markdownlint Configuration for DSS Form.io Service
+# Documentation quality standards
+
+# Default state for all rules
+default: true
+
+# Rule configuration
+MD001: true   # Heading levels should only increment by one level at a time
+MD003:        # Heading style
+  style: "atx"  # Use # for headings
+
+MD004:        # Unordered list style
+  style: "dash"  # Use - for lists
+
+MD007:        # Unordered list indentation
+  indent: 2   # 2 spaces for nested lists
+
+MD009: false  # Allow trailing spaces (needed for line breaks)
+MD010: false  # Allow hard tabs (common in code blocks)
+
+MD012:        # Multiple consecutive blank lines
+  maximum: 2  # Allow up to 2 blank lines
+
+MD013:        # Line length
+  line_length: 120  # Reasonable line length for technical docs
+  heading_line_length: 80
+  code_block_line_length: 120
+  tables: false  # Don't enforce line length in tables
+
+MD024:        # Multiple headings with the same content
+  allow_different_nesting: true  # Allow same heading at different levels
+
+MD025:        # Multiple top level headings in the same document
+  front_matter_title: ""
+
+MD026:        # Trailing punctuation in heading
+  punctuation: ".,;:!?"
+
+MD029:        # Ordered list item prefix
+  style: "ordered"  # Use 1. 2. 3. style
+
+MD033:        # Inline HTML
+  allowed_elements: 
+    - "br"
+    - "details"
+    - "summary"
+    - "img"
+    - "a"
+
+MD034: false  # Allow bare URLs (common in technical docs)
+MD036: false  # Allow emphasis used instead of heading
+
+MD041:        # First line in file should be a top level heading
+  front_matter_title: ""
+
+MD046:        # Code block style
+  style: "fenced"  # Use ``` for code blocks

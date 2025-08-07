@@ -1,0 +1,45 @@
+# Development Environment Configuration Values
+# Form.io Enterprise Service - Example Configuration
+
+# Project Configuration
+project_id  = "erlich-dev"
+region      = "us-central1"
+environment = "dev"
+
+# Form.io Enterprise Configuration
+formio_version     = "9.5.0"
+formio_license_key = "pOHMsV0uoOkfAS6q2jmugmr3Tm5VMt"
+formio_root_email  = "admin@qrius.global"
+
+# Secrets - Set these via environment variables for security
+# TF_VAR_formio_root_password="your-secure-password-here"
+# TF_VAR_formio_jwt_secret="your-32-character-jwt-secret-here"
+# TF_VAR_formio_db_secret="your-32-character-db-secret-here" 
+# TF_VAR_mongodb_connection_string="mongodb+srv://username:password@cluster.mongodb.net/formio?retryWrites=true&w=majority"
+
+# Service Configuration - Development Optimized
+service_name    = "dss-formio-api"
+max_instances   = 3
+min_instances   = 0
+cpu_request     = "1000m"
+memory_request  = "2Gi"
+concurrency     = 80
+timeout_seconds = 300
+
+# Storage Configuration
+formio_bucket_name = "" # Auto-generated
+
+# MongoDB Atlas Configuration
+mongodb_atlas_enabled = true
+mongodb_version       = "7.0"
+mongodb_tier          = "M10"
+atlas_project_name    = "dss-formio-dev"
+atlas_cluster_name    = "dss-formio-dev-cluster"
+atlas_region          = "US_CENTRAL1"
+
+# Monitoring Configuration
+notification_channels = []
+
+# Domain Configuration (Optional for dev)
+custom_domain      = ""
+ssl_certificate_id = ""

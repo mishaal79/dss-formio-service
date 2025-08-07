@@ -1,0 +1,158 @@
+# Pre-commit Configuration for DSS Form.io Service
+# Following Qrius GCP Methodology Standards
+
+default_language_version:
+  python: python3.9
+
+repos:
+  # Terraform formatting and validation
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.88.4
+    hooks:
+      # Format Terraform files
+      - id: terraform_fmt
+        name: Terraform format
+        description: Format Terraform files with terraform fmt
+        
+      # Validate Terraform syntax
+      - id: terraform_validate
+        name: Terraform validate
+        description: Validate Terraform syntax
+        args:
+          - --hook-config=--retry-once-with-cleanup=true
+          
+      # Lint Terraform files
+      - id: terraform_tflint
+        name: Terraform lint
+        description: Lint Terraform files with TFLint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+          - --args=--call-module-type=all
+          
+      # Security scanning with tfsec
+      - id: terraform_tfsec
+        name: Terraform security scan
+        description: Security scan with tfsec
+        args:
+          - --args=--config-file=__GIT_WORKING_DIR__/.tfsec.yml
+          - --args=--exclude-downloaded-modules
+          
+      # Documentation generation
+      - id: terraform_docs
+        name: Terraform docs
+        description: Generate Terraform documentation
+        args:
+          - --hook-config=--path-to-file=README.md
+          - --hook-config=--add-to-existing-file=true
+          - --hook-config=--create-file-if-not-exist=true
+          
+      # Terraform native testing
+      - id: terraform_test
+        name: Terraform test
+        description: Run Terraform native tests
+        args:
+          - --args=-verbose
+        stages: [manual]  # Run manually to avoid long CI times
+        
+      # Cost estimation (requires Infracost API key)
+      - id: infracost_breakdown
+        name: Infracost breakdown
+        description: Show cost breakdown for Terraform changes
+        args:
+          - --args=--path=.
+        stages: [manual]  # Run manually to avoid API rate limits
+        
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # Check for merge conflicts
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+        
+      # Check YAML syntax
+      - id: check-yaml
+        name: Check YAML syntax
+        args: ['--allow-multiple-documents']
+        
+      # Check JSON syntax
+      - id: check-json
+        name: Check JSON syntax
+        
+      # Remove trailing whitespace
+      - id: trailing-whitespace
+        name: Remove trailing whitespace
+        args: [--markdown-linebreak-ext=md]
+        
+      # Ensure files end with newline
+      - id: end-of-file-fixer
+        name: Fix end of files
+        
+      # Check for large files
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+        
+      # Mixed line endings
+      - id: mixed-line-ending
+        name: Check for mixed line endings
+        
+  # Detect secrets and sensitive information
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        name: Detect secrets
+        args: ['--baseline', '.secrets.baseline']
+        additional_dependencies: ["gibberish-detector"]
+        
+  # Shell script linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        name: Shell script lint
+        files: \.(sh|bash)$
+        
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        name: Markdown lint
+        args: ['--config', '.markdownlint.yaml']
+        
+  # Custom validation scripts
+  - repo: local
+    hooks:
+      # Check for TODO/FIXME comments
+      - id: check-todos
+        name: Check for TODO/FIXME
+        entry: bash -c 'if grep -r "TODO\|FIXME" --include="*.tf" --include="*.md" .; then echo "Found TODO/FIXME comments. Please resolve before committing."; exit 1; fi'
+        language: system
+        pass_filenames: false
+        
+  # YAML formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        name: Format YAML/JSON files
+        files: \.(ya?ml|json)$
+        
+# Global configuration
+fail_fast: false
+minimum_pre_commit_version: "3.0.0"
+
+# CI configuration
+ci:
+  autofix_prs: true
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+    
+    for more information, see https://pre-commit.ci
+  autoupdate_branch: 'main'
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: 'weekly'
+  skip: []
+  submodules: false

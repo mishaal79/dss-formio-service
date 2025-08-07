@@ -1,0 +1,55 @@
+# TFSec Configuration for DSS Form.io Service
+# Security scanning configuration following Qrius standards
+
+# Minimum severity level
+minimum_severity: MEDIUM
+
+# Exclude downloaded modules from scanning
+exclude_downloaded_modules: true
+
+# Custom checks configuration
+checks:
+  # Enable all Google Cloud checks
+  - google-*
+  
+  # Enable general security checks
+  - general-*
+  
+  # Enable Terraform-specific checks
+  - terraform-*
+
+# Exclude specific checks if needed (with justification)
+exclude:
+  # Example: Exclude specific check with justification
+  # - GCP001 # Specific business requirement exemption
+
+# Include additional metadata in results
+include_ignored: false
+include_passed: false
+
+# Output configuration
+format: default
+output: ""
+
+# Severity overrides for specific checks
+severity_overrides:
+  # Override severities if business requirements dictate
+  # GCP023: HIGH  # Elevate importance of specific security controls
+
+# Custom policies directory
+policy_dirs: []
+
+# Terraform version compatibility
+terraform_version: ">= 1.6.0"
+
+# Configuration for specific resource types
+config:
+  google:
+    # Ensure encryption at rest
+    require_encryption: true
+    
+    # Require private networking
+    require_private_networking: true
+    
+    # Require proper IAM bindings
+    require_least_privilege: true

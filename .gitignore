@@ -1,0 +1,284 @@
+# =============================================================================
+# DSS Form.io Service - Security-First .gitignore
+# Prevents accidental exposure of secrets, credentials, and sensitive files
+# =============================================================================
+
+# ==================
+# SECRETS & CREDENTIALS
+# ==================
+# Environment files with secrets
+.env*
+!.env.template
+!.env.example
+
+# Terraform variable files (may contain secrets)
+*.tfvars
+!*.tfvars.example
+
+# Secret files and directories
+secrets/
+.secret
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+credentials.json
+service-account.json
+
+# Password and token files
+passwords.txt
+tokens.txt
+api-keys.txt
+
+# ==================
+# TERRAFORM
+# ==================
+# State files (may contain sensitive data)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Terraform directories and files
+.terraform/
+.terraform.lock.hcl
+terraform.log
+crash.log
+
+# Override files (may contain secrets)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Plan files (may contain sensitive data)
+*.tfplan
+tfplan
+
+# ==================
+# GOOGLE CLOUD
+# ==================
+# gcloud authentication
+.config/gcloud/
+application_default_credentials.json
+
+# GCP service account keys
+*-service-account-key.json
+gcp-key.json
+google-credentials.json
+
+# Cloud Build logs
+cloudbuild.log
+
+# ==================
+# IDE & EDITOR
+# ==================
+# VSCode
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Vim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ==================
+# OPERATING SYSTEM
+# ==================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==================
+# DEVELOPMENT
+# ==================
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+.npm
+.eslintcache
+.stylelintcache
+
+# Package files
+*.tgz
+*.tar.gz
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output
+
+# ==================
+# DOCKER
+# ==================
+# Docker files with secrets
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+
+# ==================
+# LOGS & MONITORING
+# ==================
+# Log files
+*.log
+logs/
+log/
+
+# Monitoring and metrics
+metrics/
+traces/
+
+# ==================
+# TESTING
+# ==================
+# Test results
+test-results/
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+.cache
+
+# ==================
+# BUILD ARTIFACTS
+# ==================
+# Build directories
+build/
+dist/
+target/
+bin/
+obj/
+
+# Compiled files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.dylib
+
+# ==================
+# BACKUP FILES
+# ==================
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.swp
+*~
+
+# Archive files
+*.zip
+*.tar
+*.rar
+*.7z
+
+# ==================
+# CUSTOM PROJECT EXCLUSIONS
+# ==================
+# Temporary MongoDB data (if running locally)
+data/mongodb/
+mongodb-data/
+
+# Generated documentation
+generated-docs/
+
+# Local development utilities
+local-scripts/
+dev-tools/
+
+# Performance test results
+performance-results/
+load-test-results/
+
+# Database dumps
+*.sql
+*.dump
+*.db
+
+# SSL certificates for local development
+localhost.crt
+localhost.key
+ssl/
+
+# =============================================================================
+# IMPORTANT SECURITY REMINDERS:
+# - Never commit .env files with real secrets
+# - Always use Secret Manager for production credentials
+# - Encrypt Terraform state with customer-managed keys
+# - Review git history before pushing sensitive repositories
+# - Use 'git secrets' or similar tools for additional protection
+# =============================================================================
