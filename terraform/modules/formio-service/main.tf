@@ -135,7 +135,7 @@ resource "google_cloud_run_v2_service" "formio_service" {
       
       ports {
         name           = "http1"
-        container_port = 3001
+        container_port = 3000
       }
       
       resources {
@@ -230,6 +230,29 @@ resource "google_cloud_run_v2_service" "formio_service" {
       env {
         name  = "NODE_OPTIONS"
         value = "--max-old-space-size=1024"
+      }
+      
+      # Debug logging for troubleshooting
+      env {
+        name  = "DEBUG"
+        value = "*.*"
+      }
+      
+      # Admin user configuration (Form.io documentation standard)
+      env {
+        name  = "ADMIN_EMAIL"
+        value = var.formio_root_email
+      }
+      
+      env {
+        name  = "ADMIN_PASS"
+        value = "SECRET"
+      }
+      
+      # Portal secret for portal configuration
+      env {
+        name  = "PORTAL_SECRET"
+        value = "SECRET"
       }
       
       # Database name specification
