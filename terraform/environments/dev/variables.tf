@@ -61,8 +61,8 @@ variable "formio_version" {
   type        = string
   default     = "9.5.1-rc.10"
   validation {
-    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.formio_version))
-    error_message = "Version must be in semantic version format (e.g., 9.5.0)."
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+(-rc\\.[0-9]+)?$", var.formio_version))
+    error_message = "Version must be in semantic version format (e.g., 9.5.0) or release candidate format (e.g., 9.5.1-rc.10)."
   }
 }
 

@@ -164,7 +164,7 @@ resource "google_secret_manager_secret" "mongodb_connection_string" {
 
 resource "google_secret_manager_secret_version" "mongodb_connection_string" {
   secret      = google_secret_manager_secret.mongodb_connection_string.id
-  secret_data = var.formio_password_secret_id != null ? "mongodb://${var.formio_username}:${data.google_secret_manager_secret_version.formio_password[0].secret_data}@${google_compute_instance.mongodb.network_interface[0].network_ip}:27017/${var.database_name}?authSource=${var.database_name}&replicaSet=rs0" : "mongodb://placeholder:placeholder@localhost:27017/placeholder"
+  secret_data = var.formio_password_secret_id != null ? "mongodb://${urlencode(var.formio_username)}:${urlencode(data.google_secret_manager_secret_version.formio_password[0].secret_data)}@${google_compute_instance.mongodb.network_interface[0].network_ip}:27017/${var.database_name}?authSource=${var.database_name}&replicaSet=rs0" : "mongodb://placeholder:placeholder@localhost:27017/placeholder"
 }
 
 # Separate connection strings for Community and Enterprise editions
@@ -181,7 +181,7 @@ resource "google_secret_manager_secret" "mongodb_community_connection_string" {
 
 resource "google_secret_manager_secret_version" "mongodb_community_connection_string" {
   secret      = google_secret_manager_secret.mongodb_community_connection_string.id
-  secret_data = var.formio_password_secret_id != null ? "mongodb://${var.formio_username}:${data.google_secret_manager_secret_version.formio_password[0].secret_data}@${google_compute_instance.mongodb.network_interface[0].network_ip}:27017/${var.database_name}_com?authSource=${var.database_name}_com" : "mongodb://placeholder:placeholder@localhost:27017/placeholder_com"
+  secret_data = var.formio_password_secret_id != null ? "mongodb://${urlencode(var.formio_username)}:${urlencode(data.google_secret_manager_secret_version.formio_password[0].secret_data)}@${google_compute_instance.mongodb.network_interface[0].network_ip}:27017/${var.database_name}_com?authSource=${var.database_name}_com" : "mongodb://placeholder:placeholder@localhost:27017/placeholder_com"
 }
 
 resource "google_secret_manager_secret" "mongodb_enterprise_connection_string" {
@@ -197,7 +197,7 @@ resource "google_secret_manager_secret" "mongodb_enterprise_connection_string" {
 
 resource "google_secret_manager_secret_version" "mongodb_enterprise_connection_string" {
   secret      = google_secret_manager_secret.mongodb_enterprise_connection_string.id
-  secret_data = var.formio_password_secret_id != null ? "mongodb://${var.formio_username}:${data.google_secret_manager_secret_version.formio_password[0].secret_data}@${google_compute_instance.mongodb.network_interface[0].network_ip}:27017/${var.database_name}_ent?authSource=${var.database_name}_ent" : "mongodb://placeholder:placeholder@localhost:27017/placeholder_ent"
+  secret_data = var.formio_password_secret_id != null ? "mongodb://${urlencode(var.formio_username)}:${urlencode(data.google_secret_manager_secret_version.formio_password[0].secret_data)}@${google_compute_instance.mongodb.network_interface[0].network_ip}:27017/${var.database_name}_ent?authSource=${var.database_name}_ent" : "mongodb://placeholder:placeholder@localhost:27017/placeholder_ent"
 }
 
 # Firewall rule for MongoDB access from Form.io Cloud Run (via VPC Connector)
