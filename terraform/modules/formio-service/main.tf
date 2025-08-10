@@ -256,14 +256,13 @@ resource "google_cloud_run_v2_service" "formio_service" {
   labels = local.service_labels
 }
 
-# Allow unauthenticated access to Cloud Run service
-resource "google_cloud_run_service_iam_binding" "public_access" {
+# Allow authorized access to Cloud Run service
+resource "google_cloud_run_service_iam_binding" "authorized_access" {
+  count    = length(var.authorized_members) > 0 ? 1 : 0
   location = google_cloud_run_v2_service.formio_service.location
   project  = google_cloud_run_v2_service.formio_service.project
   service  = google_cloud_run_v2_service.formio_service.name
   role     = "roles/run.invoker"
   
-  members = [
-    "allUsers"
-  ]
+  members = var.authorized_members
 }

@@ -5,6 +5,7 @@
 variable "project_id" {
   description = "The GCP project ID for development environment"
   type        = string
+  default     = "erlich-dev"
   validation {
     condition     = can(regex("^[a-z][a-z0-9\\-]{4,28}[a-z0-9]$", var.project_id))
     error_message = "Project ID must be 6-30 characters, start with lowercase letter, and contain only lowercase letters, numbers, and hyphens."
@@ -14,7 +15,7 @@ variable "project_id" {
 variable "region" {
   description = "The GCP region for development deployment"
   type        = string
-  default     = "us-central1"
+  default     = "australia-southeast1"
   validation {
     condition     = contains(["us-central1", "us-east1", "us-west1", "europe-west1", "australia-southeast1", "australia-southeast2"], var.region)
     error_message = "Region must be one of: us-central1, us-east1, us-west1, europe-west1, australia-southeast1, australia-southeast2."
@@ -29,6 +30,16 @@ variable "environment" {
     condition     = var.environment == "dev"
     error_message = "Environment must be 'dev' for this configuration."
   }
+}
+
+# Security Configuration
+variable "authorized_members" {
+  description = "List of members authorized to invoke the Form.io Cloud Run services (e.g., user:your-email@domain.com)"
+  type        = list(string)
+  default = [
+    "user:admin@dsselectrical.com.au",
+    "user:mishal@qrius.global"
+  ]
 }
 
 # Service Deployment Controls
@@ -48,7 +59,7 @@ variable "deploy_enterprise" {
 variable "formio_version" {
   description = "Form.io Enterprise version tag"
   type        = string
-  default     = "9.5.0"
+  default     = "9.5.1-rc.10"
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.formio_version))
     error_message = "Version must be in semantic version format (e.g., 9.5.0)."
@@ -58,7 +69,7 @@ variable "formio_version" {
 variable "community_version" {
   description = "Form.io Community edition version tag"
   type        = string
-  default     = "v4.6.0-rc.3"
+  default     = "rc"
 }
 
 variable "formio_license_key" {
@@ -80,35 +91,8 @@ variable "formio_root_email" {
   }
 }
 
-variable "formio_root_password" {
-  description = "Form.io root admin password"
-  type        = string
-  sensitive   = true
-  validation {
-    condition     = length(var.formio_root_password) >= 8
-    error_message = "Password must be at least 8 characters long."
-  }
-}
 
-variable "formio_jwt_secret" {
-  description = "JWT secret for Form.io"
-  type        = string
-  sensitive   = true
-  validation {
-    condition     = length(var.formio_jwt_secret) >= 32
-    error_message = "JWT secret must be at least 32 characters long."
-  }
-}
 
-variable "formio_db_secret" {
-  description = "Database encryption secret for Form.io"
-  type        = string
-  sensitive   = true
-  validation {
-    condition     = length(var.formio_db_secret) >= 32
-    error_message = "Database secret must be at least 32 characters long."
-  }
-}
 
 # Service Configuration - Development Optimized
 variable "service_name" {
@@ -202,7 +186,7 @@ variable "mongodb_version" {
 variable "mongodb_machine_type" {
   description = "Machine type for MongoDB Compute Engine instance"
   type        = string
-  default     = "e2-small"  # 2GB RAM minimum for dev
+  default     = "e2-small" # 2GB RAM minimum for dev
   validation {
     condition = contains([
       "e2-small", "e2-medium", "e2-standard-2", "e2-standard-4"
@@ -227,15 +211,6 @@ variable "mongodb_admin_username" {
   default     = "mongoAdmin"
 }
 
-variable "mongodb_admin_password" {
-  description = "MongoDB admin password"
-  type        = string
-  sensitive   = true
-  validation {
-    condition     = length(var.mongodb_admin_password) >= 8
-    error_message = "MongoDB admin password must be at least 8 characters long."
-  }
-}
 
 variable "mongodb_formio_username" {
   description = "MongoDB username for Form.io application"
@@ -243,15 +218,6 @@ variable "mongodb_formio_username" {
   default     = "formioUser"
 }
 
-variable "mongodb_formio_password" {
-  description = "MongoDB password for Form.io application"
-  type        = string
-  sensitive   = true
-  validation {
-    condition     = length(var.mongodb_formio_password) >= 8
-    error_message = "MongoDB Form.io password must be at least 8 characters long."
-  }
-}
 
 variable "mongodb_database_name" {
   description = "MongoDB database name for Form.io"

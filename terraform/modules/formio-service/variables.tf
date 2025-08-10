@@ -20,6 +20,21 @@ variable "labels" {
   default     = {}
 }
 
+# Security Configuration
+variable "authorized_members" {
+  description = "List of members authorized to invoke the Cloud Run service (e.g., user:email@domain.com, serviceAccount:account@project.iam.gserviceaccount.com)"
+  type        = list(string)
+  default     = []
+  
+  validation {
+    condition = alltrue([
+      for member in var.authorized_members : 
+      can(regex("^(user:|serviceAccount:|group:|domain:)", member))
+    ])
+    error_message = "Members must start with user:, serviceAccount:, group:, or domain: prefix"
+  }
+}
+
 # Form.io Edition Configuration
 variable "use_enterprise" {
   description = "Whether to use Form.io Enterprise edition"

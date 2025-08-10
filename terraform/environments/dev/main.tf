@@ -39,16 +39,17 @@ module "formio_service" {
   environment = var.environment
 
   # Form.io configuration
-  deploy_community     = true
-  deploy_enterprise    = true
-  formio_version       = var.formio_version
-  community_version    = "v4.6.0-rc.3"
-  formio_license_key   = var.formio_license_key
-  formio_root_email    = var.formio_root_email
-  formio_root_password = var.formio_root_password
-  formio_jwt_secret    = var.formio_jwt_secret
-  formio_db_secret     = var.formio_db_secret
-  portal_enabled       = true
+  deploy_community   = true
+  deploy_enterprise  = true
+  formio_version     = var.formio_version
+  community_version  = var.community_version
+  formio_license_key = var.formio_license_key
+  formio_root_email  = var.formio_root_email
+  # Secrets are auto-generated in root module's secrets.tf
+  portal_enabled = true
+
+  # Security configuration - authorized members for Cloud Run access
+  authorized_members = var.authorized_members
 
   # Service configuration
   service_name    = var.service_name
@@ -63,14 +64,13 @@ module "formio_service" {
   formio_bucket_name = var.formio_bucket_name
 
   # MongoDB self-hosted configuration
-  mongodb_version            = var.mongodb_version
-  mongodb_machine_type       = var.mongodb_machine_type
-  mongodb_data_disk_size     = var.mongodb_data_disk_size
-  mongodb_admin_username     = var.mongodb_admin_username
-  mongodb_admin_password     = var.mongodb_admin_password
-  mongodb_formio_username    = var.mongodb_formio_username
-  mongodb_formio_password    = var.mongodb_formio_password
-  mongodb_database_name      = var.mongodb_database_name
+  mongodb_version        = var.mongodb_version
+  mongodb_machine_type   = var.mongodb_machine_type
+  mongodb_data_disk_size = var.mongodb_data_disk_size
+  mongodb_admin_username = var.mongodb_admin_username
+  # MongoDB passwords auto-generated in root module's secrets.tf
+  mongodb_formio_username       = var.mongodb_formio_username
+  mongodb_database_name         = var.mongodb_database_name
   mongodb_backup_retention_days = var.mongodb_backup_retention_days
 
   # Monitoring
@@ -80,8 +80,8 @@ module "formio_service" {
   custom_domain      = var.custom_domain
   ssl_certificate_id = var.ssl_certificate_id
 
-  # Shared infrastructure references (temporarily disabled for initial deployment)
-  shared_vpc_id           = null  # Use local networking
-  shared_subnet_ids       = []    # Use local networking  
-  shared_vpc_connector_id = null  # Use local networking
+  # Shared infrastructure references
+  shared_vpc_id           = try(data.terraform_remote_state.shared_infra.outputs.vpc_network_id, null)
+  shared_subnet_ids       = try([data.terraform_remote_state.shared_infra.outputs.app_subnet_id], [])
+  shared_vpc_connector_id = try(data.terraform_remote_state.shared_infra.outputs.vpc_connector_id, null)
 }

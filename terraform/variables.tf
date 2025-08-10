@@ -57,23 +57,8 @@ variable "formio_root_email" {
   type        = string
 }
 
-variable "formio_root_password" {
-  description = "Form.io root admin password"
-  type        = string
-  sensitive   = true
-}
 
-variable "formio_jwt_secret" {
-  description = "JWT secret for Form.io"
-  type        = string
-  sensitive   = true
-}
 
-variable "formio_db_secret" {
-  description = "Database encryption secret for Form.io"
-  type        = string
-  sensitive   = true
-}
 
 variable "portal_enabled" {
   description = "Enable Form.io developer portal"
@@ -82,6 +67,13 @@ variable "portal_enabled" {
 }
 
 # Service Configuration
+# Security Configuration
+variable "authorized_members" {
+  description = "List of members authorized to invoke the Form.io Cloud Run services"
+  type        = list(string)
+  default     = []
+}
+
 variable "service_name" {
   description = "Name of the Cloud Run service"
   type        = string
@@ -190,16 +182,6 @@ variable "mongodb_admin_username" {
   }
 }
 
-variable "mongodb_admin_password" {
-  description = "MongoDB admin password"
-  type        = string
-  sensitive   = true
-
-  validation {
-    condition     = length(var.mongodb_admin_password) >= 8
-    error_message = "MongoDB admin password must be at least 8 characters long."
-  }
-}
 
 variable "mongodb_formio_username" {
   description = "MongoDB username for Form.io application"
@@ -207,16 +189,6 @@ variable "mongodb_formio_username" {
   default     = "formioUser"
 }
 
-variable "mongodb_formio_password" {
-  description = "MongoDB password for Form.io application"
-  type        = string
-  sensitive   = true
-
-  validation {
-    condition     = length(var.mongodb_formio_password) >= 8
-    error_message = "MongoDB Form.io password must be at least 8 characters long."
-  }
-}
 
 variable "mongodb_database_name" {
   description = "MongoDB database name for Form.io"
@@ -257,19 +229,31 @@ variable "ssl_certificate_id" {
 
 # Shared Infrastructure Integration
 variable "shared_vpc_id" {
-  description = "VPC ID from shared infrastructure (gcp-dss-erlich-infra-terraform)"
+  description = "VPC ID from shared infrastructure (required - managed by gcp-dss-erlich-infra-terraform)"
   type        = string
-  default     = null
+  
+  validation {
+    condition     = var.shared_vpc_id != null && length(var.shared_vpc_id) > 0
+    error_message = "Shared VPC ID is required. This module uses shared infrastructure managed by gcp-dss-erlich-infra-terraform."
+  }
 }
 
 variable "shared_subnet_ids" {
-  description = "Private subnet IDs from shared infrastructure"
+  description = "Private subnet IDs from shared infrastructure (required - managed by gcp-dss-erlich-infra-terraform)"
   type        = list(string)
-  default     = []
+  
+  validation {
+    condition     = length(var.shared_subnet_ids) > 0
+    error_message = "At least one shared subnet ID is required. This module uses shared infrastructure managed by gcp-dss-erlich-infra-terraform."
+  }
 }
 
 variable "shared_vpc_connector_id" {
-  description = "VPC Connector ID from shared infrastructure"
+  description = "VPC Connector ID from shared infrastructure (required - managed by gcp-dss-erlich-infra-terraform)"
   type        = string
-  default     = null
+  
+  validation {
+    condition     = var.shared_vpc_connector_id != null && length(var.shared_vpc_connector_id) > 0
+    error_message = "Shared VPC Connector ID is required for Form.io license validation and service connectivity. This module uses shared infrastructure managed by gcp-dss-erlich-infra-terraform."
+  }
 }

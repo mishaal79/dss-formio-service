@@ -40,16 +40,8 @@ locals {
   # Note: Image selection is now handled per-service in the formio-service modules
 }
 
-# Networking module (only create if shared infrastructure not available)
-module "networking" {
-  count  = var.shared_vpc_id == null ? 1 : 0
-  source = "./modules/networking"
-  
-  project_id  = var.project_id
-  region      = var.region
-  environment = var.environment
-  labels      = local.common_labels
-}
+# Networking: Using shared VPC infrastructure
+# All networking resources are managed by gcp-dss-erlich-infra-terraform
 
 # Storage module
 module "storage" {
@@ -73,9 +65,9 @@ module "mongodb" {
   environment = var.environment
   labels      = local.common_labels
   
-  # Networking (use shared infrastructure if available, otherwise local)
-  vpc_network_id = var.shared_vpc_id != null ? var.shared_vpc_id : (length(module.networking) > 0 ? module.networking[0].vpc_id : null)
-  subnet_id      = length(var.shared_subnet_ids) > 0 ? var.shared_subnet_ids[0] : (length(module.networking) > 0 ? module.networking[0].app_subnet_id : null)
+  # Networking - using shared VPC infrastructure
+  vpc_network_id = var.shared_vpc_id
+  subnet_id      = var.shared_subnet_ids[0]
   
   # Instance configuration
   machine_type     = var.mongodb_machine_type
@@ -92,8 +84,8 @@ module "mongodb" {
   # Backup configuration
   backup_retention_days = var.mongodb_backup_retention_days
   
-  # Network security - allow access from VPC connector subnet
-  allowed_source_ranges = var.shared_vpc_connector_id != null ? ["10.8.0.0/28"] : ["10.2.0.0/28"]  # VPC connector ranges
+  # Network security - allow access from shared VPC connector subnet
+  allowed_source_ranges = ["10.8.0.0/28"]  # VPC connector subnet range from shared infrastructure
   
   depends_on = [
     module.storage
@@ -139,8 +131,11 @@ module "formio-community" {
   concurrency     = var.concurrency
   timeout_seconds = var.timeout_seconds
   
-  # Networking (use shared infrastructure if available, otherwise local)
-  vpc_connector_id = var.shared_vpc_connector_id != null ? var.shared_vpc_connector_id : (length(module.networking) > 0 ? module.networking[0].vpc_connector_id : null)
+  # Security configuration
+  authorized_members = var.authorized_members
+  
+  # Networking - using shared VPC connector
+  vpc_connector_id = var.shared_vpc_connector_id
   
   depends_on = [
     module.storage,
@@ -188,8 +183,11 @@ module "formio-enterprise" {
   concurrency     = var.concurrency
   timeout_seconds = var.timeout_seconds
   
-  # Networking (use shared infrastructure if available, otherwise local)
-  vpc_connector_id = var.shared_vpc_connector_id != null ? var.shared_vpc_connector_id : (length(module.networking) > 0 ? module.networking[0].vpc_connector_id : null)
+  # Security configuration
+  authorized_members = var.authorized_members
+  
+  # Networking - using shared VPC connector
+  vpc_connector_id = var.shared_vpc_connector_id
   
   depends_on = [
     module.storage,

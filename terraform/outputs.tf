@@ -94,23 +94,23 @@ output "deployed_services" {
 }
 
 output "vpc_connector_id" {
-  description = "VPC Connector ID being used (shared or local)"
-  value       = var.shared_vpc_connector_id != null ? var.shared_vpc_connector_id : (length(module.networking) > 0 ? module.networking[0].vpc_connector_id : null)
+  description = "VPC Connector ID from shared infrastructure"
+  value       = var.shared_vpc_connector_id
 }
 
 output "shared_infrastructure_details" {
   description = "Details about shared infrastructure integration"
   value = {
-    using_shared_infra = var.shared_vpc_id != null
+    using_shared_infra = true  # Always using shared infrastructure
     shared_vpc_id      = var.shared_vpc_id
     shared_subnet_ids  = var.shared_subnet_ids
-    vpc_connector_id   = var.shared_vpc_connector_id != null ? var.shared_vpc_connector_id : (length(module.networking) > 0 ? module.networking[0].vpc_connector_id : null)
+    vpc_connector_id   = var.shared_vpc_connector_id
   }
 }
 
 output "using_shared_infrastructure" {
   description = "Whether shared infrastructure is being used"
-  value       = var.shared_vpc_id != null
+  value       = true  # Always using shared infrastructure
 }
 
 # Secret Manager Outputs

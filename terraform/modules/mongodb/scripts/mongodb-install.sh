@@ -14,6 +14,10 @@ log() {
 
 log "Starting MongoDB ${mongodb_version} installation..."
 
+# Get private IP for MongoDB binding
+PRIVATE_IP=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip)
+log "Private IP detected: $PRIVATE_IP"
+
 # Update system packages
 log "Updating system packages..."
 apt-get update
@@ -92,7 +96,7 @@ systemLog:
 # Network interfaces
 net:
   port: 27017
-  bindIp: 0.0.0.0  # Listen on all interfaces (secured by firewall)
+  bindIp: 127.0.0.1,$PRIVATE_IP  # Listen on localhost and private IP only
 
 # Process management
 processManagement:

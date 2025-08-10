@@ -47,9 +47,7 @@ formio_image = "formio/formio-enterprise:9.5.0"
 - IAM-controlled access to license secrets
 
 ### Environment Deployment
-- **Development**: Enterprise edition for feature compatibility testing
-- **Staging**: Enterprise edition for production-like testing
-- **Production**: Enterprise edition for full feature set
+- **Development**: Enterprise edition for feature testing and development
 
 ## Consequences
 
@@ -73,13 +71,13 @@ formio_image = "formio/formio-enterprise:9.5.0"
 ## Monitoring and Success Criteria
 
 ### Success Metrics
-- Enterprise features successfully deployed and functional
+- Enterprise features successfully deployed and functional in dev environment
 - Premium support responsiveness meets SLA requirements
 - Advanced security features properly configured and operational
-- License compliance maintained across all environments
+- License compliance maintained for development usage
 
 ### Monitoring
-- License usage tracking across environments
+- License usage tracking in dev environment
 - Feature utilization monitoring
 - Support ticket resolution time tracking
 - Security feature effectiveness monitoring

@@ -1,6 +1,6 @@
 # Form.io Enterprise Configuration
 
-This document explains how the Form.io Enterprise edition is configured in this infrastructure deployment.
+Configuration guide for Form.io Enterprise edition deployment.
 
 ## License Information
 
@@ -17,8 +17,9 @@ This document explains how the Form.io Enterprise edition is configured in this 
 
 ## Environment Configuration
 
-### All Environments (Dev/Staging/Prod)
-All environments are configured to use the enterprise edition:
+### Development Environment
+
+The dev environment is configured to use the enterprise edition:
 
 ```hcl
 use_enterprise = true
@@ -27,13 +28,13 @@ formio_license_key = "pOHMsV0uoOkfAS6q2jmugmr3Tm5VMt"
 ```
 
 ### Secret Management
-The license key is securely stored in Google Secret Manager for each environment:
 
-- `dss-formio-api-license-key-dev`
-- `dss-formio-api-license-key-staging` 
-- `dss-formio-api-license-key-prod`
+The license key is securely stored in Google Secret Manager:
+
+- **Dev Environment**: `dss-formio-api-license-key-dev`
 
 ### Environment Variables
+
 The Cloud Run service receives the license key via environment variable:
 
 ```hcl
@@ -48,73 +49,165 @@ env {
 }
 ```
 
-## Enterprise Features Enabled
+## License Validation
 
-With the enterprise license, the following features are available:
+### Internet Access Requirement
 
-1. **Enterprise API Server**: Full enterprise feature set
-2. **Advanced Form Components**: Enterprise-only form components
-3. **Enhanced Security**: Additional security features
-4. **Premium Support**: Access to enterprise support channels
-5. **Advanced Analytics**: Enhanced reporting and analytics capabilities
+Form.io Enterprise requires internet access to validate the license with Form.io servers. The deployment uses:
+
+- **Shared VPC**: From `gcp-dss-erlich-infra-terraform`
+- **Egress Subnet**: Subnet with internet access via Cloud NAT
+- **Firewall Rules**: Allow HTTPS traffic to licensing servers
+
+### Validation Process
+
+1. Form.io Enterprise starts up in Cloud Run
+2. Retrieves license key from Secret Manager
+3. Contacts Form.io licensing servers via egress subnet
+4. Validates license and enables enterprise features
+5. Continues normal operation
+
+### Troubleshooting License Issues
+
+#### License Validation Fails
+- **Symptom**: Enterprise features not available, license errors in logs
+- **Common Causes**:
+  - No internet access from Cloud Run
+  - Incorrect license key in Secret Manager
+  - License expired or invalid
+  - Firewall blocking outbound HTTPS traffic
+
+#### Resolution Steps
+1. **Check Internet Access**:
+   ```bash
+   # Test from Cloud Run container
+   curl -I https://api.form.io
+   ```
+
+2. **Verify License Key**:
+   ```bash
+   # Check Secret Manager value
+   gcloud secrets versions access latest --secret="dss-formio-api-license-key-dev"
+   ```
+
+3. **Check License Status**:
+   - Login to Form.io portal at https://portal.form.io
+   - Verify license is active and not expired
+   - Check usage limits
+
+## Enterprise Features
+
+### Available Features
+
+With the enterprise license, the following features are enabled:
+
+- **Advanced Form Components**: Enterprise-only form components
+- **Advanced Security**: Enhanced security features
+- **Premium Support**: Access to Form.io enterprise support
+- **Advanced Analytics**: Enhanced form analytics and reporting
+- **Custom Theming**: Advanced customization options
+- **API Rate Limits**: Higher API rate limits
+- **SLA Guarantees**: Enterprise-level SLA
+
+### Feature Configuration
+
+Enterprise features are automatically enabled when a valid license is detected. No additional configuration is required.
 
 ## License Management
 
-- **Portal Access**: License administrators can manage the license at https://help.form.io/deployments/license-management
-- **Monitoring**: License usage is monitored across environments
-- **Renewal**: License expires on 08/29/2025 and will need renewal
+### Monitoring License Usage
 
-## Deployment Validation
+Monitor license usage through:
 
-To validate enterprise configuration is working:
+1. **Form.io Portal**: https://portal.form.io
+   - Login with license administrator account
+   - View usage statistics and limits
+   - Monitor license expiration
 
-1. **Check Service Logs**: Enterprise features should be available in logs
-2. **Access Admin Portal**: Admin portal should show enterprise features
-3. **Test Enterprise Components**: Verify enterprise-only components work
-4. **License Status**: Check license status in Form.io admin interface
+2. **Application Logs**: Check Cloud Run logs for license-related messages
+   ```bash
+   gcloud run services logs read formio-api-ent --region=us-central1 | grep -i license
+   ```
 
-## Troubleshooting
+### License Renewal
 
-### License Issues
-If license validation fails:
+**Important**: License expires on **08/29/2025**
 
-1. Verify license key in Secret Manager
-2. Check Cloud Run service logs for license errors
-3. Ensure proper environment variable configuration
-4. Validate license hasn't expired
+#### Renewal Process
+1. **Contact Form.io**: Reach out to Form.io sales before expiration
+2. **Obtain New License**: Receive updated license key
+3. **Update Secret**: Store new license key in Secret Manager
+4. **Restart Service**: Restart Cloud Run service to use new license
 
-### Image Issues
-If enterprise image fails to deploy:
+#### Renewal Commands
+```bash
+# Update license key in Secret Manager
+echo "NEW_LICENSE_KEY" | gcloud secrets create dss-formio-api-license-key-dev --data-file=-
 
-1. Verify access to enterprise Docker repository
-2. Check image tag is correct (`formio/formio-enterprise:9.5.0`)
-3. Ensure proper authentication for enterprise registry
+# Restart Cloud Run service
+gcloud run services replace-traffic formio-api-ent --to-latest --region=us-central1
+```
 
-## Cost Considerations
+### License Compliance
 
-- **License Cost**: Enterprise license provides significant value over community edition
-- **Infrastructure Cost**: Same infrastructure cost as community edition
-- **Feature Value**: Enterprise features justify additional licensing cost
-- **Support Value**: Premium support reduces operational overhead
+#### Usage Tracking
+- Monitor number of forms and submissions
+- Stay within license limits for API calls
+- Track active users and concurrent sessions
+
+#### Audit Requirements
+- Keep records of license usage
+- Document any license changes
+- Maintain compliance with Form.io terms
+
+## Security Considerations
+
+### Secret Protection
+- License key stored encrypted in Secret Manager
+- Access controlled via IAM policies
+- Never log license key in plain text
+- Rotate access tokens regularly
+
+### Network Security
+- License validation traffic encrypted via HTTPS
+- Outbound traffic restricted to required endpoints
+- VPC provides network isolation
+- Firewall rules limit access
 
 ## Migration from Community
 
-If migrating from community edition:
+If migrating from Community edition:
 
-1. Update `use_enterprise = true` in environment configurations
-2. Deploy with enterprise license key
-3. Verify all enterprise features are working
-4. Update any custom integrations to use enterprise APIs
+1. **Data Compatibility**: Enterprise edition is backward compatible
+2. **Configuration Update**: Update Terraform configuration to use enterprise image
+3. **License Configuration**: Add license key to Secret Manager
+4. **Feature Activation**: Enterprise features activate automatically
+5. **Testing**: Verify all forms and functionality work correctly
 
-## Security Notes
+## Troubleshooting
 
-- License key is stored securely in Secret Manager
-- No license key hardcoded in source code
-- Access to license managed via IAM permissions
-- Regular rotation of secrets recommended
+### Common Issues
 
-## References
+#### "License validation failed" Error
+- Check internet connectivity from Cloud Run
+- Verify license key in Secret Manager is correct
+- Ensure license hasn't expired
+- Check firewall rules allow HTTPS outbound
 
-- [Form.io Enterprise Documentation](https://help.form.io/deployments/form.io-enterprise-server)
-- [General Deployment Guide](https://help.form.io/deployments/deployment-guide/)
-- [License Management](https://help.form.io/deployments/license-management)
+#### Enterprise Features Not Available
+- Confirm license validation succeeded
+- Check application logs for license status
+- Verify enterprise image is being used
+- Restart service if needed
+
+#### Performance Issues
+- Enterprise edition may have different resource requirements
+- Monitor Cloud Run metrics and adjust resources if needed
+- Check for license-related API calls impacting performance
+
+### Support Resources
+
+- **Form.io Documentation**: https://help.form.io/deployments/form.io-enterprise-server
+- **License Portal**: https://portal.form.io
+- **Enterprise Support**: Contact through Form.io portal
+- **Technical Issues**: Check Cloud Run and application logs

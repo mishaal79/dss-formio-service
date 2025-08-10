@@ -91,6 +91,6 @@ module "formio_service" {
   
   # Shared infrastructure references
   shared_vpc_id           = try(data.terraform_remote_state.shared_infra.outputs.vpc_network_id, null)
-  shared_subnet_ids       = try([data.terraform_remote_state.shared_infra.outputs.app_subnet_id], [])
+  shared_subnet_ids       = try([data.terraform_remote_state.shared_infra.outputs.egress_subnet_id], [])
   shared_vpc_connector_id = try(data.terraform_remote_state.shared_infra.outputs.vpc_connector_id, null)
 }

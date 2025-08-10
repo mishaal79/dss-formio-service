@@ -1,37 +1,39 @@
-# Deployment Procedures - Form.io Dual Edition Setup
+# Form.io Enterprise Deployment Guide
 
-## Overview
-This document provides step-by-step procedures for deploying both Form.io Community and Enterprise editions simultaneously with a shared MongoDB instance.
+Simple deployment guide for Form.io Enterprise in the development environment.
 
 ## Prerequisites
 
 ### Required Software
-- Terraform >= 1.0
-- Google Cloud SDK
-- Access to GCP project with appropriate permissions
+- **Terraform** >= 1.6.0
+- **Google Cloud SDK** (gcloud)
+- **Git** access to both repositories:
+  - `dss-formio-service` (this repository)
+  - `gcp-dss-erlich-infra-terraform` (shared infrastructure)
 
-### Required Permissions
+### Required GCP Permissions
 - Compute Engine Admin
 - Cloud Run Admin  
 - Secret Manager Admin
 - Storage Admin
 - IAM Admin
-- VPC Network Admin
+- VPC Network User (for shared infrastructure)
 
-## Dual Deployment Architecture
+### Shared Infrastructure
+Ensure the shared infrastructure is deployed first:
 
-The system deploys two Form.io services:
-- **Community Edition**: `formio-api-community-dev` (uses `formio/formio:v4.6.0-rc.3`)
-- **Enterprise Edition**: `formio-api-enterprise-dev` (uses `formio/formio-enterprise:9.5.0`)
+```bash
+# In gcp-dss-erlich-infra-terraform repository
+cd environments/dev
+terraform init
+terraform apply
+```
 
-Both editions share:
-- Single MongoDB instance with separate databases (`formio_community`, `formio_enterprise`)
-- Shared Google Cloud Storage bucket with different paths
-- Same Secret Manager secrets for authentication
+This provides the VPC, subnets, and egress connectivity needed for Form.io licensing.
 
-## Environment Variable Setup
+## Environment Configuration
 
-### Required Environment Variables
+### 1. Set Required Environment Variables
 
 ```bash
 # Form.io Authentication Secrets
@@ -39,195 +41,185 @@ export TF_VAR_formio_root_password="SecureDevPassword123!"
 export TF_VAR_formio_jwt_secret="dev-jwt-secret-64-chars-for-strong-encryption-and-security-test"
 export TF_VAR_formio_db_secret="dev-db-secret-64-chars-for-strong-database-encryption-security"
 
+# Form.io Enterprise License
+export TF_VAR_formio_license_key="pOHMsV0uoOkfAS6q2jmugmr3Tm5VMt"
+export TF_VAR_formio_root_email="admin@example.com"
+
 # MongoDB Authentication
 export TF_VAR_mongodb_admin_password="SecureMongoAdminDev123!"
 export TF_VAR_mongodb_formio_password="SecureMongoFormioUser123!"
+
+# GCP Project Configuration
+export TF_VAR_project_id="your-gcp-project-id"
 ```
 
-### Security Requirements
+### 2. Password Requirements
 
-**Password Complexity:**
-- `formio_root_password`: Minimum 8 characters
-- `formio_jwt_secret`: Minimum 64 characters (no special characters)
-- `formio_db_secret`: Minimum 64 characters
-- MongoDB passwords: Minimum 8 characters with complexity
-
-**Production Recommendations:**
-- Use secrets stored in external secret management systems
-- Rotate passwords regularly
-- Use unique passwords per environment
+- **formio_root_password**: Minimum 8 characters
+- **formio_jwt_secret**: Exactly 64 characters (alphanumeric only)
+- **formio_db_secret**: Exactly 64 characters (alphanumeric only)
+- **MongoDB passwords**: Minimum 8 characters with complexity
 
 ## Deployment Steps
 
-### 1. Environment Configuration
+### 1. Navigate to Dev Environment
 
-Update deployment flags in `terraform/environments/dev/terraform.tfvars`:
-
-```hcl
-# Enable both editions
-deploy_community  = true
-deploy_enterprise = true
-
-# Version configuration
-formio_version     = "9.5.0"           # Enterprise
-community_version  = "v4.6.0-rc.3"     # Community
-
-# Service naming (must be short for SA names)
-service_name = "formio-api"
+```bash
+cd terraform/environments/dev
 ```
 
 ### 2. Initialize Terraform
 
 ```bash
-cd terraform/environments/dev
 terraform init
 ```
 
-### 3. Set Environment Variables
+This downloads required providers and initializes the backend.
+
+### 3. Plan Deployment
 
 ```bash
-# Set all required secrets
-export TF_VAR_formio_root_password="your-secure-root-password"
-export TF_VAR_formio_jwt_secret="your-64-character-jwt-secret-for-token-validation-and-signing"
-export TF_VAR_formio_db_secret="your-64-character-database-encryption-secret-for-field-security"
-export TF_VAR_mongodb_admin_password="your-secure-mongodb-admin-password"
-export TF_VAR_mongodb_formio_password="your-secure-mongodb-formio-password"
+terraform plan
 ```
 
-### 4. Plan Deployment
+Review the planned changes to ensure everything looks correct.
+
+### 4. Apply Configuration
 
 ```bash
-terraform plan -var-file="terraform.tfvars" -compact-warnings
+terraform apply
 ```
 
-### 5. Deploy Infrastructure
+Type `yes` when prompted to confirm the deployment.
+
+## Deployment Verification
+
+### 1. Check Cloud Run Service
 
 ```bash
-terraform apply -var-file="terraform.tfvars"
-```
-
-## Expected Infrastructure
-
-### Cloud Run Services
-- `dss-formio-api-com-dev` - Community edition service
-- `dss-formio-api-ent-dev` - Enterprise edition service
-
-### MongoDB Setup
-- Single Compute Engine instance running MongoDB 7.0
-- Two databases: `formio_com`, `formio_ent`
-- Separate connection strings in Secret Manager
-
-### Service Accounts
-- `dss-formio-api-com-sa-dev` (25 chars) - Community service account
-- `dss-formio-api-ent-sa-dev` (25 chars) - Enterprise service account
-
-### Secret Manager Secrets
-- `dss-formio-api-root-password-dev`
-- `dss-formio-api-jwt-secret-dev`
-- `dss-formio-api-db-secret-dev`
-- `dss-formio-api-mongodb-admin-password-dev`
-- `dss-formio-api-mongodb-formio-password-dev`
-- `dss-formio-api-mongodb-community-connection-string-dev`
-- `dss-formio-api-mongodb-enterprise-connection-string-dev`
-
-## Configuration Differences
-
-### Community Edition
-- Image: `formio/formio:v4.6.0-rc.3`
-- Database: `formio_com`
-- Storage path: `com/dev/uploads`
-- No license key required
-
-### Enterprise Edition
-- Image: `formio/formio-enterprise:9.5.0`
-- Database: `formio_ent`
-- Storage path: `ent/dev/uploads`
-- License key required (from NOTES.md)
-
-## Validation Steps
-
-### 1. Check Service Status
-```bash
-# List Cloud Run services
-gcloud run services list --region=australia-southeast1
-
-# Check service health
-curl https://dss-formio-api-com-dev-<hash>-as.a.run.app/health
-curl https://dss-formio-api-ent-dev-<hash>-as.a.run.app/health
+# Get the service URL from Terraform outputs
+terraform output formio_enterprise_service_url
 ```
 
 ### 2. Verify MongoDB Connection
-```bash
-# SSH to MongoDB instance
-gcloud compute ssh formio-mongodb-dev --zone=australia-southeast1-a
 
-# Check databases exist
-mongo -u mongoAdmin -p
-> show databases
+The MongoDB instance should be accessible from Cloud Run via private networking.
+
+### 3. Test Form.io Access
+
+1. Open the Cloud Run service URL in your browser
+2. Log in using the root credentials:
+   - Email: Value of `TF_VAR_formio_root_email`
+   - Password: Value of `TF_VAR_formio_root_password`
+
+### 4. Verify License
+
+Check that the enterprise license is active by accessing enterprise features.
+
+## Configuration Files
+
+### terraform.tfvars (Optional)
+
+Create `terraform.tfvars` for persistent configuration:
+
+```hcl
+# Project Configuration
+project_id = "your-gcp-project-id"
+region     = "us-central1"
+
+# Form.io Configuration  
+service_name      = "formio-api"
+formio_version    = "9.5.0"
+formio_root_email = "admin@example.com"
+
+# MongoDB Configuration
+mongodb_version       = "7.0"
+mongodb_machine_type  = "e2-small"
+mongodb_data_disk_size = 30
+
+# Resource Configuration
+max_instances  = 5
+min_instances  = 0
+cpu_request    = "1000m"
+memory_request = "2Gi"
 ```
-
-### 3. Test Form Creation
-- Access Community: `https://dss-formio-api-com-dev-<hash>-as.a.run.app`
-- Access Enterprise: `https://dss-formio-api-ent-dev-<hash>-as.a.run.app`
-- Login with root credentials
-- Create test forms in each edition
 
 ## Troubleshooting
 
 ### Common Issues
 
-**Service Account Name Too Long**
-- Service names use abbreviated editions: `ent` (enterprise), `com` (community)  
-- Format: `{service_name}-{edition_abbrev}-sa-{env}` must be ≤30 chars
-- Example: `dss-formio-api-ent-sa-dev` (25 chars) ✅
+#### License Validation Fails
+- **Symptom**: Form.io cannot validate enterprise license
+- **Cause**: No internet access from Cloud Run
+- **Fix**: Ensure shared infrastructure provides egress-enabled subnet
 
-**Secret Not Found Errors**
-- Verify all environment variables are set
-- Check secret naming matches service_name pattern
-- Ensure secrets exist in Secret Manager
+#### MongoDB Connection Fails
+- **Symptom**: Form.io cannot connect to database
+- **Cause**: Network connectivity or authentication issues
+- **Fix**: Check VPC networking and Secret Manager secrets
 
-**MongoDB Connection Issues**
-- Verify VPC connectivity
-- Check firewall rules allow port 27017
-- Confirm MongoDB service is running
+#### Secrets Not Found
+- **Symptom**: Terraform cannot find environment variables
+- **Cause**: Environment variables not set correctly
+- **Fix**: Re-export all required `TF_VAR_*` variables
 
-**Existing Resource Conflicts**
-- Previous deployments may conflict with naming
-- Consider destroying and recreating for clean state
-- Or update naming conventions to avoid conflicts
+### Logs and Monitoring
+
+#### Cloud Run Logs
+```bash
+gcloud run services logs read formio-api-ent --region=us-central1
+```
+
+#### MongoDB Logs
+```bash
+gcloud compute ssh mongodb-dev --zone=us-central1-a
+sudo journalctl -u mongod -f
+```
+
+## Cleanup
+
+### Destroy Infrastructure
+
+```bash
+terraform destroy
+```
+
+**Warning**: This will delete all resources including the MongoDB instance and data.
+
+### Selective Cleanup
+
+To keep data but stop services:
+```bash
+# Stop Cloud Run service
+gcloud run services update formio-api-ent --cpu=0 --region=us-central1
+
+# Stop MongoDB instance  
+gcloud compute instances stop mongodb-dev --zone=us-central1-a
+```
 
 ## Security Considerations
 
-1. **Enhanced Secret Management**: 
-   - Write-only secrets using `secret_data_wo` prevent secrets from being stored in Terraform state
-   - Cryptographically secure password generation using `random_password`
-   - All sensitive data stored in Google Secret Manager with automatic encryption
-2. **Network Isolation**: MongoDB in private subnet, accessed via VPC connector
-3. **IAM Least Privilege**: 
-   - Module-level IAM bindings for specific secrets only
-   - Each service has access only to the secrets it needs
-   - No project-wide secret accessor roles
-4. **Encryption**: All data encrypted at rest and in transit
-5. **Audit Logging**: All secret access logged for compliance
+### Secret Management
+- All secrets stored in Google Secret Manager
+- Environment variables only used during Terraform execution
+- No secrets stored in Terraform state or version control
 
-## Cost Optimization
+### Network Security
+- MongoDB only accessible via private VPC
+- Cloud Run uses shared VPC with controlled egress
+- Firewall rules restrict traffic to required services
 
-- MongoDB runs on e2-small (cost-effective for dev)
-- Cloud Run scales to zero when not in use
-- Shared storage and networking resources
-- Estimated monthly cost: <$100 for dev environment
+### Access Control
+- Service accounts use minimal required permissions
+- IAM policies follow principle of least privilege
+- Regular audit of access permissions recommended
 
-## Environment-Specific Notes
+## Next Steps
 
-### Development
-- Reduced instance sizes for cost savings
-- No load balancer or custom domains
-- Basic monitoring and alerting
-- 7-day backup retention
+After successful deployment:
 
-### Production Recommendations
-- Increase MongoDB instance size (e2-medium or higher)
-- Add custom domains and SSL certificates
-- Enhanced monitoring and alerting
-- 30-day backup retention
-- Multi-zone deployment for high availability
+1. **Configure Forms**: Create your first forms in the Form.io interface
+2. **User Management**: Set up additional users and permissions
+3. **Integration**: Connect forms to your applications
+4. **Monitoring**: Set up alerts for service health
+5. **Backup**: Implement regular MongoDB backups for production use
