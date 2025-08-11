@@ -4,7 +4,7 @@
 
 locals {
   mongodb_instance_name = "${var.project_id}-mongodb-${var.environment}"
-  
+
   # Standard labels
   common_labels = merge(var.labels, {
     service   = "mongodb"
@@ -79,13 +79,13 @@ resource "google_compute_disk" "mongodb_data_disk" {
 # MongoDB startup script
 locals {
   startup_script = templatefile("${path.module}/scripts/mongodb-install.sh", {
-    mongodb_version = var.mongodb_version
-    admin_username  = var.admin_username
-    formio_username = var.formio_username
-    database_name   = var.database_name
-    admin_password_secret = var.admin_password_secret_id != null ? var.admin_password_secret_id : "placeholder-admin-password"
+    mongodb_version        = var.mongodb_version
+    admin_username         = var.admin_username
+    formio_username        = var.formio_username
+    database_name          = var.database_name
+    admin_password_secret  = var.admin_password_secret_id != null ? var.admin_password_secret_id : "placeholder-admin-password"
     formio_password_secret = var.formio_password_secret_id != null ? var.formio_password_secret_id : "placeholder-formio-password"
-    project_id      = var.project_id
+    project_id             = var.project_id
   })
 }
 
@@ -181,7 +181,7 @@ resource "google_secret_manager_secret" "mongodb_community_connection_string" {
 
 resource "google_secret_manager_secret_version" "mongodb_community_connection_string" {
   secret      = google_secret_manager_secret.mongodb_community_connection_string.id
-  secret_data = var.formio_password_secret_id != null ? "mongodb://${urlencode(var.formio_username)}:${urlencode(data.google_secret_manager_secret_version.formio_password[0].secret_data)}@${google_compute_instance.mongodb.network_interface[0].network_ip}:27017/${var.database_name}_com?authSource=${var.database_name}_com" : "mongodb://placeholder:placeholder@localhost:27017/placeholder_com"
+  secret_data = var.formio_password_secret_id != null ? "mongodb://${urlencode(var.formio_username)}:${urlencode(data.google_secret_manager_secret_version.formio_password[0].secret_data)}@${google_compute_instance.mongodb.network_interface[0].network_ip}:27017/${var.database_name}_community?authSource=${var.database_name}_community&replicaSet=rs0" : "mongodb://placeholder:placeholder@localhost:27017/placeholder_community?replicaSet=rs0"
 }
 
 resource "google_secret_manager_secret" "mongodb_enterprise_connection_string" {
@@ -197,7 +197,7 @@ resource "google_secret_manager_secret" "mongodb_enterprise_connection_string" {
 
 resource "google_secret_manager_secret_version" "mongodb_enterprise_connection_string" {
   secret      = google_secret_manager_secret.mongodb_enterprise_connection_string.id
-  secret_data = var.formio_password_secret_id != null ? "mongodb://${urlencode(var.formio_username)}:${urlencode(data.google_secret_manager_secret_version.formio_password[0].secret_data)}@${google_compute_instance.mongodb.network_interface[0].network_ip}:27017/${var.database_name}_ent?authSource=${var.database_name}_ent" : "mongodb://placeholder:placeholder@localhost:27017/placeholder_ent"
+  secret_data = var.formio_password_secret_id != null ? "mongodb://${urlencode(var.formio_username)}:${urlencode(data.google_secret_manager_secret_version.formio_password[0].secret_data)}@${google_compute_instance.mongodb.network_interface[0].network_ip}:27017/${var.database_name}_enterprise?authSource=${var.database_name}_enterprise&replicaSet=rs0" : "mongodb://placeholder:placeholder@localhost:27017/placeholder_enterprise?replicaSet=rs0"
 }
 
 # Firewall rule for MongoDB access from Form.io Cloud Run (via VPC Connector)
@@ -234,8 +234,8 @@ resource "google_compute_health_check" "mongodb" {
 
 # Scheduled snapshots for data backup
 resource "google_compute_resource_policy" "mongodb_backup" {
-  name   = "${local.mongodb_instance_name}-backup-policy"
-  region = var.region
+  name    = "${local.mongodb_instance_name}-backup-policy"
+  region  = var.region
   project = var.project_id
 
   snapshot_schedule_policy {
@@ -250,9 +250,9 @@ resource "google_compute_resource_policy" "mongodb_backup" {
       on_source_disk_delete = "KEEP_AUTO_SNAPSHOTS"
     }
     snapshot_properties {
-      labels          = local.common_labels
+      labels            = local.common_labels
       storage_locations = [var.region]
-      guest_flush     = false
+      guest_flush       = false
     }
   }
 }

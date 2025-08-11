@@ -73,7 +73,7 @@ variable "service_name" {
   description = "Name of the Cloud Run service"
   type        = string
   default     = "formio-api"
-  
+
   validation {
     condition     = can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.service_name))
     error_message = "Service name must follow kebab-case format: lowercase letters, numbers, and hyphens only, starting and ending with alphanumeric characters."

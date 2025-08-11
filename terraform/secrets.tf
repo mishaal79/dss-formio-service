@@ -17,10 +17,10 @@ resource "random_password" "formio_root_password" {
   upper   = true
   lower   = true
   numeric = true
-  
+
   # Exclude potentially problematic characters for shell/URL safety
   override_special = "!@#$%^&*()-_=+[]{}|;:,.<>?"
-  
+
   # Ensure minimum complexity
   min_upper   = 2
   min_lower   = 2
@@ -31,7 +31,7 @@ resource "random_password" "formio_root_password" {
 # Form.io JWT Secret (256-bit equivalent for strong encryption)
 resource "random_password" "formio_jwt_secret" {
   length  = 64
-  special = false  # JWT secrets typically use base64-safe characters
+  special = false # JWT secrets typically use base64-safe characters
   upper   = true
   lower   = true
   numeric = true
@@ -44,12 +44,12 @@ resource "random_password" "formio_db_secret" {
   upper   = true
   lower   = true
   numeric = true
-  
+
   override_special = "!@#$%^&*()-_=+[]{}|;:,.<>?"
-  min_upper   = 4
-  min_lower   = 4
-  min_numeric = 4
-  min_special = 4
+  min_upper        = 4
+  min_lower        = 4
+  min_numeric      = 4
+  min_special      = 4
 }
 
 # MongoDB Admin Password (High Security)
@@ -59,12 +59,12 @@ resource "random_password" "mongodb_admin_password" {
   upper   = true
   lower   = true
   numeric = true
-  
+
   override_special = "!@#$%^&*()-_=+[]{}|;:,.<>?"
-  min_upper   = 2
-  min_lower   = 2
-  min_numeric = 2
-  min_special = 2
+  min_upper        = 2
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
 }
 
 # MongoDB Form.io User Password
@@ -74,12 +74,12 @@ resource "random_password" "mongodb_formio_password" {
   upper   = true
   lower   = true
   numeric = true
-  
+
   override_special = "!@#$%^&*()-_=+[]{}|;:,.<>?"
-  min_upper   = 2
-  min_lower   = 2
-  min_numeric = 2
-  min_special = 2
+  min_upper        = 2
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
 }
 
 # =============================================================================
@@ -91,21 +91,21 @@ resource "random_password" "mongodb_formio_password" {
 resource "google_secret_manager_secret" "formio_root_password" {
   project   = var.project_id
   secret_id = "${var.service_name}-root-password-${var.environment}"
-  
+
   labels = merge(local.common_labels, {
     purpose = "authentication"
     service = "formio"
     type    = "password"
   })
-  
+
   replication {
     auto {}
   }
 }
 
 resource "google_secret_manager_secret_version" "formio_root_password" {
-  secret                = google_secret_manager_secret.formio_root_password.id
-  secret_data_wo        = random_password.formio_root_password.result
+  secret                 = google_secret_manager_secret.formio_root_password.id
+  secret_data_wo         = random_password.formio_root_password.result
   secret_data_wo_version = 1
 }
 
@@ -113,21 +113,21 @@ resource "google_secret_manager_secret_version" "formio_root_password" {
 resource "google_secret_manager_secret" "formio_jwt_secret" {
   project   = var.project_id
   secret_id = "${var.service_name}-jwt-secret-${var.environment}"
-  
+
   labels = merge(local.common_labels, {
     purpose = "encryption"
     service = "formio"
     type    = "jwt"
   })
-  
+
   replication {
     auto {}
   }
 }
 
 resource "google_secret_manager_secret_version" "formio_jwt_secret" {
-  secret                = google_secret_manager_secret.formio_jwt_secret.id
-  secret_data_wo        = random_password.formio_jwt_secret.result
+  secret                 = google_secret_manager_secret.formio_jwt_secret.id
+  secret_data_wo         = random_password.formio_jwt_secret.result
   secret_data_wo_version = 1
 }
 
@@ -135,21 +135,21 @@ resource "google_secret_manager_secret_version" "formio_jwt_secret" {
 resource "google_secret_manager_secret" "formio_db_secret" {
   project   = var.project_id
   secret_id = "${var.service_name}-db-secret-${var.environment}"
-  
+
   labels = merge(local.common_labels, {
     purpose = "encryption"
     service = "formio"
     type    = "database"
   })
-  
+
   replication {
     auto {}
   }
 }
 
 resource "google_secret_manager_secret_version" "formio_db_secret" {
-  secret                = google_secret_manager_secret.formio_db_secret.id
-  secret_data_wo        = random_password.formio_db_secret.result
+  secret                 = google_secret_manager_secret.formio_db_secret.id
+  secret_data_wo         = random_password.formio_db_secret.result
   secret_data_wo_version = 1
 }
 
@@ -157,21 +157,21 @@ resource "google_secret_manager_secret_version" "formio_db_secret" {
 resource "google_secret_manager_secret" "mongodb_admin_password" {
   project   = var.project_id
   secret_id = "${var.service_name}-mongodb-admin-password-${var.environment}"
-  
+
   labels = merge(local.common_labels, {
     purpose = "authentication"
     service = "mongodb"
     type    = "admin-password"
   })
-  
+
   replication {
     auto {}
   }
 }
 
 resource "google_secret_manager_secret_version" "mongodb_admin_password" {
-  secret                = google_secret_manager_secret.mongodb_admin_password.id
-  secret_data_wo        = random_password.mongodb_admin_password.result
+  secret                 = google_secret_manager_secret.mongodb_admin_password.id
+  secret_data_wo         = random_password.mongodb_admin_password.result
   secret_data_wo_version = 1
 }
 
@@ -179,21 +179,21 @@ resource "google_secret_manager_secret_version" "mongodb_admin_password" {
 resource "google_secret_manager_secret" "mongodb_formio_password" {
   project   = var.project_id
   secret_id = "${var.service_name}-mongodb-formio-password-${var.environment}"
-  
+
   labels = merge(local.common_labels, {
     purpose = "authentication"
     service = "mongodb"
     type    = "user-password"
   })
-  
+
   replication {
     auto {}
   }
 }
 
 resource "google_secret_manager_secret_version" "mongodb_formio_password" {
-  secret                = google_secret_manager_secret.mongodb_formio_password.id
-  secret_data_wo        = random_password.mongodb_formio_password.result
+  secret                 = google_secret_manager_secret.mongodb_formio_password.id
+  secret_data_wo         = random_password.mongodb_formio_password.result
   secret_data_wo_version = 1
 }
 

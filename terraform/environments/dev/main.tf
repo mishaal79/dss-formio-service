@@ -49,7 +49,7 @@ module "formio_service" {
   portal_enabled = true
 
   # Security configuration - authorized members for Cloud Run access
-  authorized_members = var.authorized_members
+  authorized_members = ["user:admin@dsselectrical.com.au"]
 
   # Service configuration
   service_name    = var.service_name

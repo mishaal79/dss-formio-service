@@ -159,7 +159,7 @@ sleep 10
 
 # Initialize replica set (required for oplog)
 log "Initializing replica set..."
-mongosh --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]})"
+mongosh --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: '$PRIVATE_IP:27017'}]})"
 
 # Wait for replica set to be ready
 log "Waiting for replica set initialization..."

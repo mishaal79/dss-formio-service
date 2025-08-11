@@ -88,8 +88,8 @@ output "deployed_services" {
   value = {
     community_deployed  = var.deploy_community
     enterprise_deployed = var.deploy_enterprise
-    community_url      = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_url : null
-    enterprise_url     = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].service_url : null
+    community_url       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_url : null
+    enterprise_url      = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].service_url : null
   }
 }
 
@@ -101,7 +101,7 @@ output "vpc_connector_id" {
 output "shared_infrastructure_details" {
   description = "Details about shared infrastructure integration"
   value = {
-    using_shared_infra = true  # Always using shared infrastructure
+    using_shared_infra = true # Always using shared infrastructure
     shared_vpc_id      = var.shared_vpc_id
     shared_subnet_ids  = var.shared_subnet_ids
     vpc_connector_id   = var.shared_vpc_connector_id
@@ -110,7 +110,7 @@ output "shared_infrastructure_details" {
 
 output "using_shared_infrastructure" {
   description = "Whether shared infrastructure is being used"
-  value       = true  # Always using shared infrastructure
+  value       = true # Always using shared infrastructure
 }
 
 # Secret Manager Outputs

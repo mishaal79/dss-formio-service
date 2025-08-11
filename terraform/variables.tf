@@ -13,7 +13,7 @@ variable "region" {
 variable "environment" {
   description = "Environment name (dev, staging, prod)"
   type        = string
-  
+
   validation {
     condition     = contains(["dev", "staging", "prod"], var.environment)
     error_message = "Environment must be one of: dev, staging, prod."
@@ -78,7 +78,7 @@ variable "service_name" {
   description = "Name of the Cloud Run service"
   type        = string
   default     = "formio-api"
-  
+
   validation {
     condition     = can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.service_name))
     error_message = "Service name must follow kebab-case format: lowercase letters, numbers, and hyphens only, starting and ending with alphanumeric characters."
@@ -126,9 +126,9 @@ variable "formio_bucket_name" {
   description = "Name of the GCS bucket for Form.io file storage"
   type        = string
   default     = ""
-  
+
   validation {
-    condition = var.formio_bucket_name == "" || can(regex("^dss-formio-[a-z0-9]+-[a-z]+-[a-z0-9]+$", var.formio_bucket_name))
+    condition     = var.formio_bucket_name == "" || can(regex("^dss-formio-[a-z0-9]+-[a-z]+-[a-z0-9]+$", var.formio_bucket_name))
     error_message = "Bucket name must follow pattern: dss-formio-{service}-{environment}-{suffix} (e.g., dss-formio-storage-dev-a1b2c3)."
   }
 }
@@ -148,7 +148,7 @@ variable "mongodb_version" {
 variable "mongodb_machine_type" {
   description = "Machine type for MongoDB Compute Engine instance"
   type        = string
-  default     = "e2-small"  # 2GB RAM minimum per Gemini recommendation
+  default     = "e2-small" # 2GB RAM minimum per Gemini recommendation
 
   validation {
     condition = contains([
@@ -231,7 +231,7 @@ variable "ssl_certificate_id" {
 variable "shared_vpc_id" {
   description = "VPC ID from shared infrastructure (required - managed by gcp-dss-erlich-infra-terraform)"
   type        = string
-  
+
   validation {
     condition     = var.shared_vpc_id != null && length(var.shared_vpc_id) > 0
     error_message = "Shared VPC ID is required. This module uses shared infrastructure managed by gcp-dss-erlich-infra-terraform."
@@ -241,7 +241,7 @@ variable "shared_vpc_id" {
 variable "shared_subnet_ids" {
   description = "Private subnet IDs from shared infrastructure (required - managed by gcp-dss-erlich-infra-terraform)"
   type        = list(string)
-  
+
   validation {
     condition     = length(var.shared_subnet_ids) > 0
     error_message = "At least one shared subnet ID is required. This module uses shared infrastructure managed by gcp-dss-erlich-infra-terraform."
@@ -251,7 +251,7 @@ variable "shared_subnet_ids" {
 variable "shared_vpc_connector_id" {
   description = "VPC Connector ID from shared infrastructure (required - managed by gcp-dss-erlich-infra-terraform)"
   type        = string
-  
+
   validation {
     condition     = var.shared_vpc_connector_id != null && length(var.shared_vpc_connector_id) > 0
     error_message = "Shared VPC Connector ID is required for Form.io license validation and service connectivity. This module uses shared infrastructure managed by gcp-dss-erlich-infra-terraform."

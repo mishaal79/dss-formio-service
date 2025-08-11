@@ -47,7 +47,7 @@ variable "subnet_id" {
 variable "machine_type" {
   description = "Machine type for MongoDB instance"
   type        = string
-  default     = "e2-small"  # 2GB RAM minimum per Gemini recommendation
+  default     = "e2-small" # 2GB RAM minimum per Gemini recommendation
 
   validation {
     condition = contains([

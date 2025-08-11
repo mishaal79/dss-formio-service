@@ -25,9 +25,9 @@ variable "formio_bucket_name" {
   description = "Name of the GCS bucket for Form.io file storage"
   type        = string
   default     = ""
-  
+
   validation {
-    condition = var.formio_bucket_name == "" || can(regex("^dss-formio-[a-z0-9]+-[a-z]+-[a-z0-9]+$", var.formio_bucket_name))
+    condition     = var.formio_bucket_name == "" || can(regex("^dss-formio-[a-z0-9]+-[a-z]+-[a-z0-9]+$", var.formio_bucket_name))
     error_message = "Bucket name must follow pattern: dss-formio-{service}-{environment}-{suffix} (e.g., dss-formio-storage-dev-a1b2c3)."
   }
 }

@@ -94,7 +94,7 @@ variable "formio_db_secret" {
 variable "portal_enabled" {
   description = "Enable Form.io developer portal"
   type        = bool
-  default     = false  # Typically disabled in production
+  default     = false # Typically disabled in production
 }
 
 # Service Configuration - Production Optimized
@@ -111,7 +111,7 @@ variable "service_name" {
 variable "max_instances" {
   description = "Maximum number of Cloud Run instances"
   type        = number
-  default     = 20  # Higher for production load
+  default     = 20 # Higher for production load
   validation {
     condition     = var.max_instances >= 5 && var.max_instances <= 100
     error_message = "Max instances must be between 5 and 100 for production environment."
@@ -121,7 +121,7 @@ variable "max_instances" {
 variable "min_instances" {
   description = "Minimum number of Cloud Run instances"
   type        = number
-  default     = 2  # Always-on for production
+  default     = 2 # Always-on for production
   validation {
     condition     = var.min_instances >= 1 && var.min_instances <= 10
     error_message = "Min instances must be between 1 and 10 for production environment."
@@ -131,7 +131,7 @@ variable "min_instances" {
 variable "cpu_request" {
   description = "CPU request for each Cloud Run instance"
   type        = string
-  default     = "2000m"  # 2 vCPU for production
+  default     = "2000m" # 2 vCPU for production
   validation {
     condition     = contains(["1000m", "2000m", "4000m"], var.cpu_request)
     error_message = "CPU request must be 1000m, 2000m, or 4000m for production environment."
@@ -141,7 +141,7 @@ variable "cpu_request" {
 variable "memory_request" {
   description = "Memory request for each Cloud Run instance"
   type        = string
-  default     = "4Gi"  # 4GB for production
+  default     = "4Gi" # 4GB for production
   validation {
     condition     = contains(["2Gi", "4Gi", "8Gi"], var.memory_request)
     error_message = "Memory request must be 2Gi, 4Gi, or 8Gi for production environment."
@@ -172,7 +172,7 @@ variable "timeout_seconds" {
 variable "formio_bucket_name" {
   description = "Name of the GCS bucket for Form.io file storage"
   type        = string
-  default     = ""  # Will be auto-generated if empty
+  default     = "" # Will be auto-generated if empty
 }
 
 # MongoDB Configuration
@@ -195,7 +195,7 @@ variable "mongodb_version" {
 variable "mongodb_tier" {
   description = "MongoDB Atlas cluster tier"
   type        = string
-  default     = "M30"  # Production-ready tier
+  default     = "M30" # Production-ready tier
   validation {
     condition     = contains(["M10", "M20", "M30", "M40"], var.mongodb_tier)
     error_message = "MongoDB tier must be M10, M20, M30, or M40 for production environment."

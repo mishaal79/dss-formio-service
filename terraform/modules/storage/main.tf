@@ -45,6 +45,6 @@ resource "google_storage_bucket" "formio_storage" {
 resource "google_storage_bucket_iam_binding" "public_access_prevention" {
   bucket = google_storage_bucket.formio_storage.name
   role   = "roles/storage.objectViewer"
-  
+
   members = []
 }
