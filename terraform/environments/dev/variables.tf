@@ -59,7 +59,7 @@ variable "deploy_enterprise" {
 variable "formio_version" {
   description = "Form.io Enterprise version tag"
   type        = string
-  default     = "9.5.1-rc.10"
+  default     = "9.6.0-rc.4"
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+(-rc\\.[0-9]+)?$", var.formio_version))
     error_message = "Version must be in semantic version format (e.g., 9.5.0) or release candidate format (e.g., 9.5.1-rc.10)."
@@ -172,37 +172,10 @@ variable "formio_bucket_name" {
   default     = "" # Will be auto-generated if empty
 }
 
-# MongoDB Self-Hosted Configuration
-variable "mongodb_version" {
-  description = "MongoDB version to install"
+# MongoDB Atlas Configuration
+variable "mongodb_atlas_org_id" {
+  description = "MongoDB Atlas organization ID"
   type        = string
-  default     = "7.0"
-  validation {
-    condition     = contains(["6.0", "7.0"], var.mongodb_version)
-    error_message = "MongoDB version must be 6.0 or 7.0."
-  }
-}
-
-variable "mongodb_machine_type" {
-  description = "Machine type for MongoDB Compute Engine instance"
-  type        = string
-  default     = "e2-small" # 2GB RAM minimum for dev
-  validation {
-    condition = contains([
-      "e2-small", "e2-medium", "e2-standard-2", "e2-standard-4"
-    ], var.mongodb_machine_type)
-    error_message = "Machine type must be e2-small or larger for MongoDB."
-  }
-}
-
-variable "mongodb_data_disk_size" {
-  description = "Size of MongoDB data disk in GB"
-  type        = number
-  default     = 30
-  validation {
-    condition     = var.mongodb_data_disk_size >= 20
-    error_message = "MongoDB data disk size must be at least 20GB."
-  }
 }
 
 variable "mongodb_admin_username" {
@@ -225,15 +198,6 @@ variable "mongodb_database_name" {
   default     = "formio"
 }
 
-variable "mongodb_backup_retention_days" {
-  description = "Number of days to retain MongoDB backups"
-  type        = number
-  default     = 7
-  validation {
-    condition     = var.mongodb_backup_retention_days >= 1 && var.mongodb_backup_retention_days <= 365
-    error_message = "Backup retention must be between 1 and 365 days."
-  }
-}
 
 
 # Monitoring Configuration
@@ -254,4 +218,15 @@ variable "ssl_certificate_id" {
   description = "SSL certificate ID for custom domain"
   type        = string
   default     = ""
+}
+
+# Custom Domains for Whitelabeling
+variable "custom_domains" {
+  description = "List of custom domains for Form.io whitelabeling (DNS must be configured in org project first)"
+  type        = list(string)
+  default     = [
+    # Uncomment when DNS is configured in gcp-dss-org-infra-terraform:
+    # "forms.dsselectrical.com.au",
+    # "apply.dsselectrical.com.au"
+  ]
 }

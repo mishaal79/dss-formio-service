@@ -29,9 +29,9 @@ variable "authorized_members" {
   validation {
     condition = alltrue([
       for member in var.authorized_members :
-      can(regex("^(user:|serviceAccount:|group:|domain:)", member))
+      can(regex("^(user:|serviceAccount:|group:|domain:|allUsers$|allAuthenticatedUsers$)", member))
     ])
-    error_message = "Members must start with user:, serviceAccount:, group:, or domain: prefix"
+    error_message = "Members must start with user:, serviceAccount:, group:, domain: prefix or be 'allUsers' or 'allAuthenticatedUsers'"
   }
 }
 
@@ -130,11 +130,7 @@ variable "mongodb_connection_string_secret_id" {
 }
 
 # Infrastructure Dependencies
-variable "vpc_connector_id" {
-  description = "VPC connector ID for Cloud Run networking"
-  type        = string
-  default     = null
-}
+# VPC connector removed - using Direct VPC egress with Cloud NAT for cost optimization
 
 variable "storage_bucket_name" {
   description = "Name of the GCS bucket for file storage"
@@ -176,4 +172,19 @@ variable "timeout_seconds" {
   description = "Request timeout in seconds"
   type        = number
   default     = 300
+}
+
+# Custom Domain Configuration
+variable "custom_domains" {
+  description = "List of custom domains for whitelabeling (will be activated when DNS is configured)"
+  type        = list(string)
+  default     = []
+  
+  validation {
+    condition = alltrue([
+      for domain in var.custom_domains :
+      can(regex("^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]\\.[a-zA-Z]{2,}$", domain))
+    ])
+    error_message = "All custom domains must be valid domain names"
+  }
 }

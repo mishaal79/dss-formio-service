@@ -13,6 +13,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.0"
     }
+    mongodbatlas = {
+      source  = "mongodb/mongodbatlas"
+      version = "~> 1.39"
+    }
   }
 }
 
@@ -26,6 +30,15 @@ provider "google-beta" {
   region  = var.region
 }
 
+provider "mongodbatlas" {
+  # Terraform-native authentication using environment variables:
+  # MONGODB_ATLAS_PUBLIC_API_KEY
+  # MONGODB_ATLAS_PRIVATE_API_KEY
+  # 
+  # This is the proper separation of concerns - provider credentials
+  # are handled outside the infrastructure being provisioned
+}
+
 # Data sources
 # Note: Removed unused data "google_project" "current"
 
@@ -37,11 +50,37 @@ locals {
     managed_by  = "terraform"
   }
 
+  # Database name constants (DRY principle)
+  mongodb_community_db_name  = "${var.mongodb_database_name}_community"
+  mongodb_enterprise_db_name = "${var.mongodb_database_name}_enterprise"
+
   # Note: Image selection is now handled per-service in the formio-service modules
 }
 
+# =============================================================================
+# NETWORKING INFRASTRUCTURE
+# Using shared infrastructure from gcp-dss-erlich-infra-terraform
+# =============================================================================
+
+# Get Cloud NAT static IP from shared infrastructure
+data "terraform_remote_state" "shared_infra" {
+  backend = "gcs"
+  config = {
+    bucket = "dss-org-tf-state"
+    prefix = "erlich/dev"
+  }
+}
+
+# Get Cloud NAT external IPs from shared infrastructure  
+data "google_compute_router_nat" "shared_nat" {
+  name    = "erlich-vpc-dev-nat-gateway"
+  project = "erlich-dev" # Shared infrastructure project
+  region  = var.region
+  router  = "erlich-vpc-dev-nat-router"
+}
+
 # Networking: Using shared VPC infrastructure
-# All networking resources are managed by gcp-dss-erlich-infra-terraform
+# Shared Cloud NAT provides outbound connectivity for MongoDB Atlas access
 
 # Storage module
 module "storage" {
@@ -55,24 +94,22 @@ module "storage" {
   formio_bucket_name = var.formio_bucket_name
 }
 
-# MongoDB module (self-hosted on Compute Engine)
-module "mongodb" {
-  source = "./modules/mongodb"
+# MongoDB Atlas module (managed MongoDB cluster)
+module "mongodb_atlas" {
+  source = "./modules/mongodb-atlas"
 
   project_id  = var.project_id
   region      = var.region
-  zone        = "${var.region}-a" # Use zone a in the region
   environment = var.environment
   labels      = local.common_labels
 
-  # Networking - using shared VPC infrastructure
-  vpc_network_id = var.shared_vpc_id
-  subnet_id      = var.shared_subnet_ids[0]
-
-  # Instance configuration
-  machine_type    = var.mongodb_machine_type
-  data_disk_size  = var.mongodb_data_disk_size
-  mongodb_version = var.mongodb_version
+  # MongoDB Atlas configuration
+  atlas_project_name            = "${var.service_name}-${var.environment}"
+  atlas_org_id                  = var.mongodb_atlas_org_id
+  cluster_name                  = "${var.service_name}-${var.environment}-flex"
+  backing_provider_name         = "GCP"
+  atlas_region_name             = "ASIA_SOUTHEAST_2"
+  termination_protection_enabled = var.environment == "prod"
 
   # Authentication - Using Secret Manager for secure password management
   admin_username            = var.mongodb_admin_username
@@ -80,12 +117,14 @@ module "mongodb" {
   formio_username           = var.mongodb_formio_username
   formio_password_secret_id = google_secret_manager_secret.mongodb_formio_password.secret_id
   database_name             = var.mongodb_database_name
+  
+  # Pass database name constants for consistent naming
+  community_database_name   = local.mongodb_community_db_name
+  enterprise_database_name  = local.mongodb_enterprise_db_name
 
-  # Backup configuration
-  backup_retention_days = var.mongodb_backup_retention_days
-
-  # Network security - allow access from shared VPC connector subnet
-  allowed_source_ranges = ["10.8.0.0/28"] # VPC connector subnet range from shared infrastructure
+  # Network security - temporarily allow all IPs for testing Cloud NAT connectivity
+  # TODO: Narrow down to actual Cloud NAT external IPs once identified
+  cloud_nat_static_ip = "0.0.0.0/0" # Temporary - allow all IPs to test connectivity
 
   depends_on = [
     module.storage
@@ -117,8 +156,8 @@ module "formio-community" {
   portal_enabled = var.portal_enabled
 
   # Database configuration - separate database for Community
-  database_name                       = "${var.mongodb_database_name}_com"
-  mongodb_connection_string_secret_id = module.mongodb.mongodb_community_connection_string_secret_id
+  database_name                       = local.mongodb_community_db_name
+  mongodb_connection_string_secret_id = module.mongodb_atlas.mongodb_community_connection_string_secret_id
 
   # Dependencies
   storage_bucket_name = module.storage.bucket_name
@@ -134,12 +173,11 @@ module "formio-community" {
   # Security configuration
   authorized_members = var.authorized_members
 
-  # Networking - using shared VPC connector
-  vpc_connector_id = var.shared_vpc_connector_id
+  # Networking - using Direct VPC egress with Cloud NAT (VPC connector removed for cost optimization)
 
   depends_on = [
     module.storage,
-    module.mongodb
+    module.mongodb_atlas
   ]
 }
 
@@ -169,8 +207,8 @@ module "formio-enterprise" {
   portal_enabled = var.portal_enabled
 
   # Database configuration - separate database for Enterprise
-  database_name                       = "${var.mongodb_database_name}_ent"
-  mongodb_connection_string_secret_id = module.mongodb.mongodb_enterprise_connection_string_secret_id
+  database_name                       = local.mongodb_enterprise_db_name
+  mongodb_connection_string_secret_id = module.mongodb_atlas.mongodb_enterprise_connection_string_secret_id
 
   # Dependencies
   storage_bucket_name = module.storage.bucket_name
@@ -186,12 +224,14 @@ module "formio-enterprise" {
   # Security configuration
   authorized_members = var.authorized_members
 
-  # Networking - using shared VPC connector
-  vpc_connector_id = var.shared_vpc_connector_id
+  # Custom domains for whitelabeling
+  custom_domains = var.custom_domains
+
+  # Networking - using Direct VPC egress with Cloud NAT (VPC connector removed for cost optimization)
 
   depends_on = [
     module.storage,
-    module.mongodb
+    module.mongodb_atlas
   ]
 }
 

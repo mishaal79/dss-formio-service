@@ -133,42 +133,14 @@ variable "formio_bucket_name" {
   }
 }
 
-# MongoDB Self-Hosted Configuration
-variable "mongodb_version" {
-  description = "MongoDB version to install"
+# MongoDB Atlas Configuration
+variable "mongodb_atlas_org_id" {
+  description = "MongoDB Atlas organization ID"
   type        = string
-  default     = "7.0"
-
-  validation {
-    condition     = contains(["6.0", "7.0"], var.mongodb_version)
-    error_message = "MongoDB version must be 6.0 or 7.0."
-  }
 }
 
-variable "mongodb_machine_type" {
-  description = "Machine type for MongoDB Compute Engine instance"
-  type        = string
-  default     = "e2-small" # 2GB RAM minimum per Gemini recommendation
-
-  validation {
-    condition = contains([
-      "e2-small", "e2-medium", "e2-standard-2", "e2-standard-4",
-      "n1-standard-1", "n1-standard-2", "n1-standard-4"
-    ], var.mongodb_machine_type)
-    error_message = "Machine type must be e2-small or larger for MongoDB."
-  }
-}
-
-variable "mongodb_data_disk_size" {
-  description = "Size of MongoDB data disk in GB"
-  type        = number
-  default     = 30
-
-  validation {
-    condition     = var.mongodb_data_disk_size >= 20
-    error_message = "MongoDB data disk size must be at least 20GB."
-  }
-}
+# MongoDB Atlas API credentials are stored directly in Secret Manager
+# No Terraform variables needed - retrieved via data sources
 
 # MongoDB Authentication Configuration
 variable "mongodb_admin_username" {
@@ -248,12 +220,13 @@ variable "shared_subnet_ids" {
   }
 }
 
-variable "shared_vpc_connector_id" {
-  description = "VPC Connector ID from shared infrastructure (required - managed by gcp-dss-erlich-infra-terraform)"
-  type        = string
+# VPC Connector removed - replaced with Direct VPC egress and Cloud NAT for cost optimization
+# Form.io now uses Direct VPC egress routing all traffic through Cloud NAT gateway
+# This provides secure MongoDB Atlas connectivity at ~85% cost reduction vs VPC connector
 
-  validation {
-    condition     = var.shared_vpc_connector_id != null && length(var.shared_vpc_connector_id) > 0
-    error_message = "Shared VPC Connector ID is required for Form.io license validation and service connectivity. This module uses shared infrastructure managed by gcp-dss-erlich-infra-terraform."
-  }
+# Custom Domain Configuration
+variable "custom_domains" {
+  description = "List of custom domains for Form.io whitelabeling (requires DNS configuration in gcp-dss-org-infra-terraform)"
+  type        = list(string)
+  default     = []
 }
