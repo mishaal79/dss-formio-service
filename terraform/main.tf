@@ -1,24 +1,4 @@
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 6.0"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = "~> 6.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
-    }
-    mongodbatlas = {
-      source  = "mongodb/mongodbatlas"
-      version = "~> 1.39"
-    }
-  }
-}
+# Terraform configuration moved to terraform.tf for better organization
 
 provider "google" {
   project = var.project_id
@@ -62,25 +42,27 @@ locals {
 # Using shared infrastructure from gcp-dss-erlich-infra-terraform
 # =============================================================================
 
-# Get Cloud NAT static IP from shared infrastructure
-data "terraform_remote_state" "shared_infra" {
-  backend = "gcs"
-  config = {
-    bucket = "dss-org-tf-state"
-    prefix = "erlich/dev"
-  }
-}
-
-# Get Cloud NAT external IPs from shared infrastructure  
-data "google_compute_router_nat" "shared_nat" {
-  name    = "erlich-vpc-dev-nat-gateway"
-  project = "erlich-dev" # Shared infrastructure project
-  region  = var.region
-  router  = "erlich-vpc-dev-nat-router"
-}
+# Shared infrastructure references removed - using direct IP configuration
+# Cloud NAT IP discovered via: gcloud compute addresses list --project=erlich-dev
 
 # Networking: Using shared VPC infrastructure
 # Shared Cloud NAT provides outbound connectivity for MongoDB Atlas access
+
+# =============================================================================
+# NETWORKING INFRASTRUCTURE  
+# =============================================================================
+
+# Static external IP for Cloud NAT (for MongoDB Atlas access)
+resource "google_compute_address" "formio_nat_ip" {
+  name         = "${var.service_name}-nat-ip-${var.environment}"
+  description  = "Static external IP for Form.io Cloud NAT gateway (MongoDB Atlas access)"
+  project      = var.project_id
+  region       = var.region
+  address_type = "EXTERNAL"
+  network_tier = "PREMIUM"
+
+  labels = local.common_labels
+}
 
 # Storage module
 module "storage" {
@@ -104,11 +86,11 @@ module "mongodb_atlas" {
   labels      = local.common_labels
 
   # MongoDB Atlas configuration
-  atlas_project_name            = "${var.service_name}-${var.environment}"
-  atlas_org_id                  = var.mongodb_atlas_org_id
-  cluster_name                  = "${var.service_name}-${var.environment}-flex"
-  backing_provider_name         = "GCP"
-  atlas_region_name             = "ASIA_SOUTHEAST_2"
+  atlas_project_name             = "${var.service_name}-${var.environment}"
+  atlas_org_id                   = var.mongodb_atlas_org_id
+  cluster_name                   = "${var.service_name}-${var.environment}-flex"
+  backing_provider_name          = "GCP"
+  atlas_region_name              = "ASIA_SOUTHEAST_2"
   termination_protection_enabled = var.environment == "prod"
 
   # Authentication - Using Secret Manager for secure password management
@@ -117,17 +99,60 @@ module "mongodb_atlas" {
   formio_username           = var.mongodb_formio_username
   formio_password_secret_id = google_secret_manager_secret.mongodb_formio_password.secret_id
   database_name             = var.mongodb_database_name
-  
-  # Pass database name constants for consistent naming
-  community_database_name   = local.mongodb_community_db_name
-  enterprise_database_name  = local.mongodb_enterprise_db_name
 
-  # Network security - temporarily allow all IPs for testing Cloud NAT connectivity
-  # TODO: Narrow down to actual Cloud NAT external IPs once identified
-  cloud_nat_static_ip = "0.0.0.0/0" # Temporary - allow all IPs to test connectivity
+  # Pass database name constants for consistent naming
+  community_database_name  = local.mongodb_community_db_name
+  enterprise_database_name = local.mongodb_enterprise_db_name
+
+  # Network security - restrict access to dynamically managed Cloud NAT external IP
+  # SECURITY FIX: Replace hardcoded IP with Terraform-managed static IP resource
+  cloud_nat_static_ip = "${google_compute_address.formio_nat_ip.address}/32"
 
   depends_on = [
     module.storage
+  ]
+}
+
+# Load Balancer with Cloud Armor Security
+module "load_balancer" {
+  count  = var.enable_load_balancer ? 1 : 0
+  source = "./modules/load-balancer"
+
+  project_id  = var.project_id
+  region      = var.region
+  environment = var.environment
+
+  # Service configuration
+  service_name           = var.service_name
+  cloud_run_service_name = var.deploy_enterprise ? "${var.service_name}-ent-${var.environment}" : "${var.service_name}-com-${var.environment}"
+
+  # SSL configuration for custom domains
+  ssl_domains = var.enable_load_balancer ? (
+    length(var.custom_domains) > 0 ? var.custom_domains :
+    [var.custom_domain != "" ? var.custom_domain : "${var.service_name}.${var.project_id}.com"]
+  ) : []
+
+  # Security configuration
+  enable_geo_blocking           = var.enable_geo_blocking
+  rate_limit_threshold_count    = var.rate_limit_threshold_count
+  rate_limit_threshold_interval = var.rate_limit_threshold_interval
+  rate_limit_ban_duration       = var.rate_limit_ban_duration
+
+  # Backend configuration
+  health_check_path   = "/health"
+  health_check_port   = 80
+  backend_timeout_sec = 30
+  enable_cdn          = false
+
+  # Logging
+  enable_access_logs = true
+  log_sample_rate    = 1.0
+
+  labels = local.common_labels
+
+  depends_on = [
+    module.storage,
+    module.mongodb_atlas
   ]
 }
 
@@ -171,7 +196,8 @@ module "formio-community" {
   timeout_seconds = var.timeout_seconds
 
   # Security configuration
-  authorized_members = var.authorized_members
+  authorized_members   = var.authorized_members
+  enable_load_balancer = var.enable_load_balancer
 
   # Networking - using Direct VPC egress with Cloud NAT (VPC connector removed for cost optimization)
 
@@ -222,7 +248,8 @@ module "formio-enterprise" {
   timeout_seconds = var.timeout_seconds
 
   # Security configuration
-  authorized_members = var.authorized_members
+  authorized_members   = var.authorized_members
+  enable_load_balancer = var.enable_load_balancer
 
   # Custom domains for whitelabeling
   custom_domains = var.custom_domains

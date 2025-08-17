@@ -11,13 +11,18 @@ data "google_secret_manager_secret_version" "formio_jwt_secret" {
 }
 
 locals {
-  node_config = jsonencode({
+  # Community Edition NODE_CONFIG with Community-specific Atlas connection
+  community_node_config = jsonencode({
     mongo = data.google_secret_manager_secret_version.mongodb_connection_string.secret_data
     port  = 3000
     jwt = {
       secret = data.google_secret_manager_secret_version.formio_jwt_secret.secret_data
     }
   })
+
+  # Enterprise Edition uses individual environment variables (MONGO, JWT_SECRET, etc.)
+  # Community Edition uses NODE_CONFIG with JSON
+  node_config = var.use_enterprise ? "" : local.community_node_config
 
   # Missing locals restored from interrupted refactoring
   formio_image      = var.use_enterprise ? "formio/formio-enterprise:${var.formio_version}" : "formio/formio:${var.community_version}"
@@ -111,6 +116,9 @@ resource "google_cloud_run_v2_service" "formio_service" {
   location = var.region
   project  = var.project_id
 
+  # SECURITY: Force all traffic through load balancer (prevents bypass attacks)
+  ingress = var.enable_load_balancer ? "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" : "INGRESS_TRAFFIC_ALL"
+
   # Temporarily disable deletion protection for testing
   deletion_protection = false
 
@@ -124,13 +132,15 @@ resource "google_cloud_run_v2_service" "formio_service" {
   template {
     service_account = google_service_account.formio_service_account.email
 
-    # VPC Connector (if provided)
-    dynamic "vpc_access" {
-      for_each = var.vpc_connector_id != null ? [1] : []
-      content {
-        connector = var.vpc_connector_id
-        egress    = "ALL_TRAFFIC"
+    # Direct VPC egress using shared infrastructure egress subnet
+    # Routes all outbound traffic through shared VPC and Cloud NAT gateway
+    vpc_access {
+      network_interfaces {
+        network    = "projects/erlich-dev/global/networks/erlich-vpc-dev"
+        subnetwork = "projects/erlich-dev/regions/${var.region}/subnetworks/erlich-vpc-egress-subnet-dev"
+        tags       = ["formio-egress"]
       }
+      egress = "ALL_TRAFFIC"
     }
 
     containers {
@@ -138,7 +148,7 @@ resource "google_cloud_run_v2_service" "formio_service" {
       image = local.formio_image
 
       ports {
-        name           = "http1"
+        name           = "http1" # Force HTTP/1.1 protocol (fixes Form.io 502 errors)
         container_port = 3000
       }
 
@@ -149,31 +159,19 @@ resource "google_cloud_run_v2_service" "formio_service" {
         }
       }
 
-      # Startup probe - more lenient for Form.io initialization
-      startup_probe {
-        http_get {
-          path = "/status"
-          port = 3000
-        }
-        initial_delay_seconds = 30
-        timeout_seconds      = 10
-        period_seconds       = 15
-        failure_threshold    = 10
-      }
-
-      # Liveness probe for ongoing health checks
+      # Health checks - startup probe removed to allow service to start naturally
       liveness_probe {
         http_get {
-          path = "/status"
+          path = "/health"
           port = 3000
         }
-        initial_delay_seconds = 60
-        timeout_seconds      = 5
-        period_seconds       = 30
-        failure_threshold    = 3
+        initial_delay_seconds = 180
+        timeout_seconds       = 30
+        period_seconds        = 30
+        failure_threshold     = 3
       }
 
-      # Community Edition Configuration
+      # Community Edition Configuration - NODE_CONFIG with MongoDB Atlas connection
       dynamic "env" {
         for_each = var.use_enterprise ? [] : [1]
         content {
@@ -221,7 +219,7 @@ resource "google_cloud_run_v2_service" "formio_service" {
 
       env {
         name  = "PORTAL_ENABLED"
-        value = var.portal_enabled ? "true" : "false"
+        value = var.portal_enabled ? "1" : "0"
       }
 
       env {
@@ -281,7 +279,6 @@ resource "google_cloud_run_v2_service" "formio_service" {
         value = "*.*"
       }
 
-
       # Admin user configuration (Form.io documentation standard)
       env {
         name  = "ADMIN_EMAIL"
@@ -315,6 +312,18 @@ resource "google_cloud_run_v2_service" "formio_service" {
         value = var.database_name
       }
 
+      # Ensure Form.io binds to all interfaces (not just localhost)
+      env {
+        name  = "HOST"
+        value = "0.0.0.0"
+      }
+
+      # Explicitly set port for Form.io (Cloud Run expects PORT env var)
+      env {
+        name  = "PORT"
+        value = "3000"
+      }
+
       # TODO: Add PDF_SERVER configuration once basic deployment is working
       # This enables PDF form generation and export functionality
       # env {
@@ -341,6 +350,8 @@ resource "google_cloud_run_v2_service" "formio_service" {
 }
 
 # Allow authorized access to Cloud Run service
+# When using load balancer, only the load balancer needs access
+# When not using load balancer, allow configured members
 resource "google_cloud_run_service_iam_binding" "authorized_access" {
   count    = length(var.authorized_members) > 0 ? 1 : 0
   location = google_cloud_run_v2_service.formio_service.location
@@ -349,4 +360,15 @@ resource "google_cloud_run_service_iam_binding" "authorized_access" {
   role     = "roles/run.invoker"
 
   members = var.authorized_members
+}
+
+# Allow load balancer to access Cloud Run service
+resource "google_cloud_run_service_iam_binding" "load_balancer_access" {
+  count    = var.enable_load_balancer ? 1 : 0
+  location = google_cloud_run_v2_service.formio_service.location
+  project  = google_cloud_run_v2_service.formio_service.project
+  service  = google_cloud_run_v2_service.formio_service.name
+  role     = "roles/run.invoker"
+
+  members = ["allUsers"]
 }

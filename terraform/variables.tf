@@ -168,23 +168,7 @@ variable "mongodb_database_name" {
   default     = "formio"
 }
 
-variable "mongodb_backup_retention_days" {
-  description = "Number of days to retain MongoDB backups"
-  type        = number
-  default     = 7
 
-  validation {
-    condition     = var.mongodb_backup_retention_days >= 1 && var.mongodb_backup_retention_days <= 365
-    error_message = "Backup retention must be between 1 and 365 days."
-  }
-}
-
-# Monitoring Configuration
-variable "notification_channels" {
-  description = "List of notification channel IDs for alerts"
-  type        = list(string)
-  default     = []
-}
 
 # Domain Configuration (Optional)
 variable "custom_domain" {
@@ -193,11 +177,6 @@ variable "custom_domain" {
   default     = ""
 }
 
-variable "ssl_certificate_id" {
-  description = "SSL certificate ID for custom domain"
-  type        = string
-  default     = ""
-}
 
 # Shared Infrastructure Integration
 variable "shared_vpc_id" {
@@ -229,4 +208,50 @@ variable "custom_domains" {
   description = "List of custom domains for Form.io whitelabeling (requires DNS configuration in gcp-dss-org-infra-terraform)"
   type        = list(string)
   default     = []
+}
+
+# =============================================================================
+# LOAD BALANCER AND SECURITY CONFIGURATION
+# =============================================================================
+
+variable "enable_load_balancer" {
+  description = "Enable load balancer with Cloud Armor security policies"
+  type        = bool
+  default     = false
+}
+
+variable "enable_geo_blocking" {
+  description = "Enable geographic blocking to allow only Australia traffic (requires load balancer)"
+  type        = bool
+  default     = true
+}
+
+variable "rate_limit_threshold_count" {
+  description = "Number of requests allowed per IP before rate limiting (requires load balancer)"
+  type        = number
+  default     = 100
+  validation {
+    condition     = var.rate_limit_threshold_count >= 10 && var.rate_limit_threshold_count <= 1000
+    error_message = "Rate limit threshold must be between 10 and 1000 requests."
+  }
+}
+
+variable "rate_limit_threshold_interval" {
+  description = "Time window in seconds for rate limiting (requires load balancer)"
+  type        = number
+  default     = 60
+  validation {
+    condition     = var.rate_limit_threshold_interval >= 30 && var.rate_limit_threshold_interval <= 300
+    error_message = "Rate limit interval must be between 30 and 300 seconds."
+  }
+}
+
+variable "rate_limit_ban_duration" {
+  description = "Duration in seconds to ban IPs that exceed rate limits (requires load balancer)"
+  type        = number
+  default     = 600
+  validation {
+    condition     = var.rate_limit_ban_duration >= 300 && var.rate_limit_ban_duration <= 3600
+    error_message = "Ban duration must be between 300 and 3600 seconds (5 minutes to 1 hour)."
+  }
 }

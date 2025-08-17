@@ -67,19 +67,17 @@ resource "random_password" "mongodb_admin_password" {
   min_special      = 2
 }
 
-# MongoDB Form.io User Password
+# MongoDB Form.io User Password (Cloud Run compatible - no special chars)
 resource "random_password" "mongodb_formio_password" {
   length  = 32
-  special = true
+  special = false # No special characters for Cloud Run compatibility
   upper   = true
   lower   = true
   numeric = true
 
-  override_special = "!@#$%^&*()-_=+[]{}|;:,.<>?"
-  min_upper        = 2
-  min_lower        = 2
-  min_numeric      = 2
-  min_special      = 2
+  min_upper   = 4
+  min_lower   = 4
+  min_numeric = 4
 }
 
 # =============================================================================
@@ -101,12 +99,17 @@ resource "google_secret_manager_secret" "formio_root_password" {
   replication {
     auto {}
   }
+
+  # SECURITY: Prevent accidental deletion of critical secrets
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_secret_manager_secret_version" "formio_root_password" {
   secret                 = google_secret_manager_secret.formio_root_password.id
   secret_data_wo         = random_password.formio_root_password.result
-  secret_data_wo_version = 1
+  secret_data_wo_version = 2
 }
 
 # Form.io JWT Secret
@@ -123,12 +126,17 @@ resource "google_secret_manager_secret" "formio_jwt_secret" {
   replication {
     auto {}
   }
+
+  # SECURITY: Prevent accidental deletion of critical secrets
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_secret_manager_secret_version" "formio_jwt_secret" {
   secret                 = google_secret_manager_secret.formio_jwt_secret.id
   secret_data_wo         = random_password.formio_jwt_secret.result
-  secret_data_wo_version = 1
+  secret_data_wo_version = 2
 }
 
 # Form.io Database Secret
@@ -145,12 +153,17 @@ resource "google_secret_manager_secret" "formio_db_secret" {
   replication {
     auto {}
   }
+
+  # SECURITY: Prevent accidental deletion of critical secrets
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_secret_manager_secret_version" "formio_db_secret" {
   secret                 = google_secret_manager_secret.formio_db_secret.id
   secret_data_wo         = random_password.formio_db_secret.result
-  secret_data_wo_version = 1
+  secret_data_wo_version = 2
 }
 
 # MongoDB Admin Password Secret
@@ -167,12 +180,17 @@ resource "google_secret_manager_secret" "mongodb_admin_password" {
   replication {
     auto {}
   }
+
+  # SECURITY: Prevent accidental deletion of critical secrets
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_secret_manager_secret_version" "mongodb_admin_password" {
   secret                 = google_secret_manager_secret.mongodb_admin_password.id
   secret_data_wo         = random_password.mongodb_admin_password.result
-  secret_data_wo_version = 1
+  secret_data_wo_version = 2
 }
 
 # MongoDB Form.io User Password Secret
@@ -189,13 +207,31 @@ resource "google_secret_manager_secret" "mongodb_formio_password" {
   replication {
     auto {}
   }
+
+  # SECURITY: Prevent accidental deletion of critical secrets
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_secret_manager_secret_version" "mongodb_formio_password" {
   secret                 = google_secret_manager_secret.mongodb_formio_password.id
   secret_data_wo         = random_password.mongodb_formio_password.result
-  secret_data_wo_version = 1
+  secret_data_wo_version = 3
 }
+
+# =============================================================================
+# MONGODB ATLAS PROVIDER AUTHENTICATION
+# Using Terraform-native environment variables (proper separation of concerns)
+# =============================================================================
+
+# MongoDB Atlas provider credentials are handled via environment variables:
+# - MONGODB_ATLAS_PUBLIC_API_KEY
+# - MONGODB_ATLAS_PRIVATE_API_KEY
+#
+# This is the Terraform-native approach for provider authentication,
+# avoiding unnecessary coupling between GCP Secret Manager and Atlas provider.
+# Provider authentication should be handled outside the infrastructure being provisioned.
 
 # =============================================================================
 # IAM BINDINGS FOR SECRET ACCESS

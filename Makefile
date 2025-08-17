@@ -52,15 +52,13 @@ deploy-com: ## Deploy Community edition (usage: make deploy-com IMG=formio/formi
 	gcloud run deploy $(SERVICE_COM) \
 		--image=$(IMG_COM) \
 		--region=$(REGION) \
-		--project=$(PROJECT_ID) \
-		--no-traffic
+		--project=$(PROJECT_ID)
 
 deploy-ent: ## Deploy Enterprise edition (usage: make deploy-ent IMG=formio/formio-enterprise:tag)
 	gcloud run deploy $(SERVICE_ENT) \
 		--image=$(IMG_ENT) \
 		--region=$(REGION) \
-		--project=$(PROJECT_ID) \
-		--no-traffic
+		--project=$(PROJECT_ID)
 
 deploy-all: deploy-com deploy-ent ## Deploy both Community and Enterprise editions
 
@@ -102,3 +100,21 @@ status: ## Show service status
 	gcloud run services describe $(SERVICE_COM) --region=$(REGION) --project=$(PROJECT_ID) --format="value(status.url,status.conditions[0].message)"
 	@echo "=== Enterprise Edition ==="
 	gcloud run services describe $(SERVICE_ENT) --region=$(REGION) --project=$(PROJECT_ID) --format="value(status.url,status.conditions[0].message)"
+
+# MongoDB Atlas Management
+atlas-status: ## Show MongoDB Atlas cluster status
+	@echo "=== MongoDB Atlas Status ==="
+	cd $(TF_ENV_DIR) && terraform output mongodb_atlas_cluster_state mongodb_atlas_cluster_name mongodb_atlas_project_id
+
+atlas-info: ## Show detailed Atlas information
+	@echo "=== MongoDB Atlas Cluster Details ==="
+	cd $(TF_ENV_DIR) && terraform output | grep mongodb_atlas
+
+health-check: ## Run comprehensive health check
+	./scripts/health-check.sh
+
+restart-services: ## Restart Cloud Run services to pick up new secrets
+	@echo "Restarting Cloud Run services..."
+	gcloud run services update $(SERVICE_COM) --region=$(REGION) --project=$(PROJECT_ID)
+	gcloud run services update $(SERVICE_ENT) --region=$(REGION) --project=$(PROJECT_ID)
+	@echo "Services restarted. Use 'make status' to check status."

@@ -30,25 +30,31 @@ output "formio_enterprise_admin_url" {
   value       = var.deploy_enterprise && var.portal_enabled && length(module.formio-enterprise) > 0 ? "${module.formio-enterprise[0].service_url}/admin" : null
 }
 
-output "mongodb_connection_string" {
-  description = "MongoDB connection string for Form.io"
-  value       = module.mongodb.mongodb_connection_string
+# MongoDB Atlas Outputs
+output "mongodb_atlas_cluster_id" {
+  description = "MongoDB Atlas cluster ID"
+  value       = module.mongodb_atlas.cluster_id
+}
+
+output "mongodb_atlas_cluster_name" {
+  description = "MongoDB Atlas cluster name"
+  value       = module.mongodb_atlas.cluster_name
+}
+
+output "mongodb_atlas_cluster_state" {
+  description = "MongoDB Atlas cluster state"
+  value       = module.mongodb_atlas.cluster_state
+}
+
+output "mongodb_atlas_project_id" {
+  description = "MongoDB Atlas project ID"
+  value       = module.mongodb_atlas.atlas_project_id
+}
+
+output "mongodb_connection_strings_srv" {
+  description = "MongoDB Atlas connection string (SRV format)"
+  value       = module.mongodb_atlas.connection_strings_standard_srv
   sensitive   = true
-}
-
-output "mongodb_instance_name" {
-  description = "Name of the MongoDB Compute Engine instance"
-  value       = module.mongodb.mongodb_instance_name
-}
-
-output "mongodb_private_ip" {
-  description = "Private IP address of the MongoDB instance"
-  value       = module.mongodb.mongodb_private_ip
-}
-
-output "mongodb_database_name" {
-  description = "Name of the MongoDB database for Form.io"
-  value       = module.mongodb.mongodb_database_name
 }
 
 output "storage_bucket_name" {
@@ -93,18 +99,14 @@ output "deployed_services" {
   }
 }
 
-output "vpc_connector_id" {
-  description = "VPC Connector ID from shared infrastructure"
-  value       = var.shared_vpc_connector_id
-}
-
+# Shared infrastructure integration
 output "shared_infrastructure_details" {
   description = "Details about shared infrastructure integration"
   value = {
     using_shared_infra = true # Always using shared infrastructure
     shared_vpc_id      = var.shared_vpc_id
     shared_subnet_ids  = var.shared_subnet_ids
-    vpc_connector_id   = var.shared_vpc_connector_id
+    cloud_nat_info     = "Using shared Cloud NAT from gcp-dss-erlich-infra-terraform"
   }
 }
 
