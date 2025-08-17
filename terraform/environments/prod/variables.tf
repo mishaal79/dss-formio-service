@@ -5,6 +5,7 @@
 variable "project_id" {
   description = "The GCP project ID for production environment"
   type        = string
+  default     = "erlich-prod"
   validation {
     condition     = can(regex("^[a-z][a-z0-9\\-]{4,28}[a-z0-9]$", var.project_id))
     error_message = "Project ID must be 6-30 characters, start with lowercase letter, and contain only lowercase letters, numbers, and hyphens."
@@ -12,12 +13,12 @@ variable "project_id" {
 }
 
 variable "region" {
-  description = "The GCP region for production deployment"
+  description = "The GCP region for development deployment"
   type        = string
-  default     = "us-central1"
+  default     = "australia-southeast1"
   validation {
-    condition     = contains(["us-central1", "us-east1", "us-west1", "europe-west1"], var.region)
-    error_message = "Region must be one of: us-central1, us-east1, us-west1, europe-west1."
+    condition     = contains(["us-central1", "us-east1", "us-west1", "europe-west1", "australia-southeast1", "australia-southeast2"], var.region)
+    error_message = "Region must be one of: us-central1, us-east1, us-west1, europe-west1, australia-southeast1, australia-southeast2."
   }
 }
 
@@ -31,15 +32,44 @@ variable "environment" {
   }
 }
 
+# Security Configuration
+variable "authorized_members" {
+  description = "List of members authorized to invoke the Form.io Cloud Run services (e.g., user:your-email@domain.com)"
+  type        = list(string)
+  default = [
+    "user:admin@dsselectrical.com.au",
+    "user:mishal@qrius.global"
+  ]
+}
+
+# Service Deployment Controls
+variable "deploy_community" {
+  description = "Whether to deploy Form.io Community edition service"
+  type        = bool
+  default     = true
+}
+
+variable "deploy_enterprise" {
+  description = "Whether to deploy Form.io Enterprise edition service"
+  type        = bool
+  default     = true
+}
+
 # Form.io Enterprise Configuration
 variable "formio_version" {
   description = "Form.io Enterprise version tag"
   type        = string
-  default     = "9.5.0"
+  default     = "9.6.0-rc.4"
   validation {
-    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.formio_version))
-    error_message = "Version must be in semantic version format (e.g., 9.5.0)."
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+(-rc\\.[0-9]+)?$", var.formio_version))
+    error_message = "Version must be in semantic version format (e.g., 9.5.0) or release candidate format (e.g., 9.5.1-rc.10)."
   }
+}
+
+variable "community_version" {
+  description = "Form.io Community edition version tag"
+  type        = string
+  default     = "rc"
 }
 
 variable "formio_license_key" {
@@ -61,43 +91,10 @@ variable "formio_root_email" {
   }
 }
 
-variable "formio_root_password" {
-  description = "Form.io root admin password"
-  type        = string
-  sensitive   = true
-  validation {
-    condition     = length(var.formio_root_password) >= 12
-    error_message = "Password must be at least 12 characters long for production."
-  }
-}
 
-variable "formio_jwt_secret" {
-  description = "JWT secret for Form.io"
-  type        = string
-  sensitive   = true
-  validation {
-    condition     = length(var.formio_jwt_secret) >= 64
-    error_message = "JWT secret must be at least 64 characters long for production."
-  }
-}
 
-variable "formio_db_secret" {
-  description = "Database encryption secret for Form.io"
-  type        = string
-  sensitive   = true
-  validation {
-    condition     = length(var.formio_db_secret) >= 64
-    error_message = "Database secret must be at least 64 characters long for production."
-  }
-}
 
-variable "portal_enabled" {
-  description = "Enable Form.io developer portal"
-  type        = bool
-  default     = false # Typically disabled in production
-}
-
-# Service Configuration - Production Optimized
+# Service Configuration - Development Optimized
 variable "service_name" {
   description = "Name of the Cloud Run service"
   type        = string
@@ -111,20 +108,20 @@ variable "service_name" {
 variable "max_instances" {
   description = "Maximum number of Cloud Run instances"
   type        = number
-  default     = 20 # Higher for production load
+  default     = 20 # Higher for production environment
   validation {
-    condition     = var.max_instances >= 5 && var.max_instances <= 100
-    error_message = "Max instances must be between 5 and 100 for production environment."
+    condition     = var.max_instances >= 5 && var.max_instances <= 50
+    error_message = "Max instances must be between 5 and 50 for production environment."
   }
 }
 
 variable "min_instances" {
   description = "Minimum number of Cloud Run instances"
   type        = number
-  default     = 2 # Always-on for production
+  default     = 2 # Higher minimum for production availability
   validation {
-    condition     = var.min_instances >= 1 && var.min_instances <= 10
-    error_message = "Min instances must be between 1 and 10 for production environment."
+    condition     = var.min_instances >= 2 && var.min_instances <= 5
+    error_message = "Min instances must be between 2 and 5 for production environment."
   }
 }
 
@@ -153,8 +150,8 @@ variable "concurrency" {
   type        = number
   default     = 80
   validation {
-    condition     = var.concurrency >= 10 && var.concurrency <= 100
-    error_message = "Concurrency must be between 10 and 100."
+    condition     = var.concurrency >= 1 && var.concurrency <= 100
+    error_message = "Concurrency must be between 1 and 100."
   }
 }
 
@@ -175,78 +172,115 @@ variable "formio_bucket_name" {
   default     = "" # Will be auto-generated if empty
 }
 
-# MongoDB Configuration
-variable "mongodb_atlas_enabled" {
-  description = "Use MongoDB Atlas instead of self-hosted MongoDB"
-  type        = bool
-  default     = true
-}
-
-variable "mongodb_version" {
-  description = "MongoDB version"
-  type        = string
-  default     = "7.0"
-  validation {
-    condition     = contains(["7.0"], var.mongodb_version)
-    error_message = "MongoDB version must be 7.0 for production environment."
-  }
-}
-
-variable "mongodb_tier" {
-  description = "MongoDB Atlas cluster tier"
-  type        = string
-  default     = "M30" # Production-ready tier
-  validation {
-    condition     = contains(["M10", "M20", "M30", "M40"], var.mongodb_tier)
-    error_message = "MongoDB tier must be M10, M20, M30, or M40 for production environment."
-  }
-}
-
 # MongoDB Atlas Configuration
-variable "atlas_org_id" {
+variable "mongodb_atlas_org_id" {
   description = "MongoDB Atlas organization ID"
   type        = string
-  default     = ""
 }
 
-variable "atlas_project_name" {
-  description = "MongoDB Atlas project name"
+variable "mongodb_admin_username" {
+  description = "MongoDB admin username"
   type        = string
-  default     = "dss-formio-prod"
+  default     = "mongoAdmin"
 }
 
-variable "atlas_cluster_name" {
-  description = "MongoDB Atlas cluster name"
+
+variable "mongodb_formio_username" {
+  description = "MongoDB username for Form.io application"
   type        = string
-  default     = "dss-formio-prod-cluster"
+  default     = "formioUser"
 }
 
-variable "atlas_region" {
-  description = "MongoDB Atlas region"
+
+variable "mongodb_database_name" {
+  description = "MongoDB database name for Form.io"
   type        = string
-  default     = "US_CENTRAL1"
+  default     = "formio"
 }
 
-# Monitoring Configuration
-variable "notification_channels" {
-  description = "List of notification channel IDs for alerts"
-  type        = list(string)
-  default     = []
-  validation {
-    condition     = length(var.notification_channels) > 0
-    error_message = "At least one notification channel must be configured for production environment."
-  }
-}
 
-# Domain Configuration (Required for production)
+
+# Monitoring Configuration (placeholder for future use)
+# variable "notification_channels" {
+#   description = "List of notification channel IDs for alerts"
+#   type        = list(string)
+#   default     = []
+# }
+
+# Domain Configuration (Optional for dev)
 variable "custom_domain" {
   description = "Custom domain for Form.io service"
   type        = string
   default     = ""
 }
 
-variable "ssl_certificate_id" {
-  description = "SSL certificate ID for custom domain"
-  type        = string
-  default     = ""
+# SSL certificate configuration (placeholder for future use)
+# variable "ssl_certificate_id" {
+#   description = "SSL certificate ID for custom domain"
+#   type        = string
+#   default     = ""
+# }
+
+# Custom Domains for Whitelabeling
+variable "custom_domains" {
+  description = "List of custom domains for Form.io whitelabeling (DNS must be configured in org project first)"
+  type        = list(string)
+  default = [
+    # Uncomment when DNS is configured in gcp-dss-org-infra-terraform:
+    # "forms.dsselectrical.com.au",
+    # "apply.dsselectrical.com.au"
+  ]
+}
+
+# Portal Configuration
+variable "portal_enabled" {
+  description = "Enable Form.io developer portal"
+  type        = bool
+  default     = true
+}
+
+# =============================================================================
+# LOAD BALANCER AND SECURITY CONFIGURATION
+# =============================================================================
+
+variable "enable_load_balancer" {
+  description = "Enable load balancer with Cloud Armor security policies"
+  type        = bool
+  default     = false
+}
+
+variable "enable_geo_blocking" {
+  description = "Enable geographic blocking to allow only Australia traffic (requires load balancer)"
+  type        = bool
+  default     = true
+}
+
+variable "rate_limit_threshold_count" {
+  description = "Number of requests allowed per IP before rate limiting (requires load balancer)"
+  type        = number
+  default     = 100
+  validation {
+    condition     = var.rate_limit_threshold_count >= 10 && var.rate_limit_threshold_count <= 1000
+    error_message = "Rate limit threshold must be between 10 and 1000 requests."
+  }
+}
+
+variable "rate_limit_threshold_interval" {
+  description = "Time window in seconds for rate limiting (requires load balancer)"
+  type        = number
+  default     = 60
+  validation {
+    condition     = var.rate_limit_threshold_interval >= 30 && var.rate_limit_threshold_interval <= 300
+    error_message = "Rate limit interval must be between 30 and 300 seconds."
+  }
+}
+
+variable "rate_limit_ban_duration" {
+  description = "Duration in seconds to ban IPs that exceed rate limits (requires load balancer)"
+  type        = number
+  default     = 600
+  validation {
+    condition     = var.rate_limit_ban_duration >= 300 && var.rate_limit_ban_duration <= 3600
+    error_message = "Ban duration must be between 300 and 3600 seconds (5 minutes to 1 hour)."
+  }
 }

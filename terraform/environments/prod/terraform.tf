@@ -1,13 +1,18 @@
-# Terraform Backend and Provider Configuration
-# Production Environment
+# =============================================================================
+# TERRAFORM CONFIGURATION - Production Environment
+# =============================================================================
 
 terraform {
-  required_version = ">= 1.6.0"
+  required_version = ">= 1.0"
 
-  # Remote state backend configuration
+  # Remote state backend for production environment
+  # SECURITY: State file contains sensitive data and must be stored securely
   backend "gcs" {
-    bucket = "dss-org-tf-state"
-    prefix = "formio/prod"
+    bucket = "dss-terraform-state-formio"
+    prefix = "formio-service/environments/prod"
+
+    # State locking enabled automatically with GCS backend
+    # Prevents concurrent modifications and state corruption
   }
 
   required_providers {
@@ -19,34 +24,13 @@ terraform {
       source  = "hashicorp/google-beta"
       version = "~> 6.0"
     }
-  }
-}
-
-# Provider configuration
-provider "google" {
-  project = var.project_id
-  region  = var.region
-
-  # Default labels for all resources
-  default_labels = {
-    environment = "prod"
-    project     = "dss-formio"
-    managed_by  = "terraform"
-    tier        = "production"
-    compliance  = "required"
-  }
-}
-
-provider "google-beta" {
-  project = var.project_id
-  region  = var.region
-
-  # Default labels for all resources
-  default_labels = {
-    environment = "prod"
-    project     = "dss-formio"
-    managed_by  = "terraform"
-    tier        = "production"
-    compliance  = "required"
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+    mongodbatlas = {
+      source  = "mongodb/mongodbatlas"
+      version = "~> 1.39"
+    }
   }
 }

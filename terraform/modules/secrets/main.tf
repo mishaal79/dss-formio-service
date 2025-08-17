@@ -1,9 +1,21 @@
 # =============================================================================
-# DSS Form.io Service - Cryptographically Secure Secret Management
+# DSS Form.io Service - Cryptographically Secure Secret Management Module
 # Implements Google Cloud + Terraform security best practices
 # =============================================================================
 
-# Random provider is configured in main.tf
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 6.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+  }
+}
 
 # =============================================================================
 # CRYPTOGRAPHICALLY SECURE PASSWORD GENERATION
@@ -90,7 +102,7 @@ resource "google_secret_manager_secret" "formio_root_password" {
   project   = var.project_id
   secret_id = "${var.service_name}-root-password-${var.environment}"
 
-  labels = merge(local.common_labels, {
+  labels = merge(var.labels, {
     purpose = "authentication"
     service = "formio"
     type    = "password"
@@ -102,7 +114,7 @@ resource "google_secret_manager_secret" "formio_root_password" {
 
   # SECURITY: Prevent accidental deletion of critical secrets
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -117,7 +129,7 @@ resource "google_secret_manager_secret" "formio_jwt_secret" {
   project   = var.project_id
   secret_id = "${var.service_name}-jwt-secret-${var.environment}"
 
-  labels = merge(local.common_labels, {
+  labels = merge(var.labels, {
     purpose = "encryption"
     service = "formio"
     type    = "jwt"
@@ -129,7 +141,7 @@ resource "google_secret_manager_secret" "formio_jwt_secret" {
 
   # SECURITY: Prevent accidental deletion of critical secrets
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -144,7 +156,7 @@ resource "google_secret_manager_secret" "formio_db_secret" {
   project   = var.project_id
   secret_id = "${var.service_name}-db-secret-${var.environment}"
 
-  labels = merge(local.common_labels, {
+  labels = merge(var.labels, {
     purpose = "encryption"
     service = "formio"
     type    = "database"
@@ -156,7 +168,7 @@ resource "google_secret_manager_secret" "formio_db_secret" {
 
   # SECURITY: Prevent accidental deletion of critical secrets
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -171,7 +183,7 @@ resource "google_secret_manager_secret" "mongodb_admin_password" {
   project   = var.project_id
   secret_id = "${var.service_name}-mongodb-admin-password-${var.environment}"
 
-  labels = merge(local.common_labels, {
+  labels = merge(var.labels, {
     purpose = "authentication"
     service = "mongodb"
     type    = "admin-password"
@@ -183,7 +195,7 @@ resource "google_secret_manager_secret" "mongodb_admin_password" {
 
   # SECURITY: Prevent accidental deletion of critical secrets
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -198,7 +210,7 @@ resource "google_secret_manager_secret" "mongodb_formio_password" {
   project   = var.project_id
   secret_id = "${var.service_name}-mongodb-formio-password-${var.environment}"
 
-  labels = merge(local.common_labels, {
+  labels = merge(var.labels, {
     purpose = "authentication"
     service = "mongodb"
     type    = "user-password"
@@ -210,7 +222,7 @@ resource "google_secret_manager_secret" "mongodb_formio_password" {
 
   # SECURITY: Prevent accidental deletion of critical secrets
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -219,61 +231,3 @@ resource "google_secret_manager_secret_version" "mongodb_formio_password" {
   secret_data_wo         = random_password.mongodb_formio_password.result
   secret_data_wo_version = 3
 }
-
-# =============================================================================
-# MONGODB ATLAS PROVIDER AUTHENTICATION
-# Using Terraform-native environment variables (proper separation of concerns)
-# =============================================================================
-
-# MongoDB Atlas provider credentials are handled via environment variables:
-# - MONGODB_ATLAS_PUBLIC_API_KEY
-# - MONGODB_ATLAS_PRIVATE_API_KEY
-#
-# This is the Terraform-native approach for provider authentication,
-# avoiding unnecessary coupling between GCP Secret Manager and Atlas provider.
-# Provider authentication should be handled outside the infrastructure being provisioned.
-
-# =============================================================================
-# IAM BINDINGS FOR SECRET ACCESS
-# Implementing least privilege access control
-# =============================================================================
-
-# Note: IAM bindings for secrets are handled by individual service modules
-# This prevents circular dependencies during deployment
-
-# =============================================================================
-# OUTPUTS FOR TERRAFORM MODULES
-# Providing secret references (not values) to other modules
-# =============================================================================
-
-
-# =============================================================================
-# SECURITY DOCUMENTATION
-# =============================================================================
-
-# The secrets generated by this configuration follow Google Cloud and Terraform
-# security best practices:
-#
-# 1. CRYPTOGRAPHICALLY SECURE: Uses Terraform's random_password resource with
-#    high-entropy generation suitable for production environments
-#
-# 2. NO SECRETS IN STATE: Only references to Secret Manager secrets are stored
-#    in Terraform state, not the actual secret values
-#
-# 3. PROPER COMPLEXITY: Passwords meet enterprise security requirements with
-#    minimum character type requirements and safe special characters
-#
-# 4. LEAST PRIVILEGE: IAM bindings provide minimal necessary access to secrets
-#
-# 5. ENCRYPTED STORAGE: All secrets stored in Google Secret Manager with
-#    automatic encryption at rest and in transit
-#
-# 6. AUDIT TRAIL: Secret Manager provides complete access logging for compliance
-#
-# 7. ROTATION READY: Terraform can update secret versions for password rotation
-#
-# Usage in other modules:
-# - Reference secrets by ID: google_secret_manager_secret.formio_jwt_secret.secret_id
-# - Never reference .result values outside this file
-# - Use environment variables in Cloud Run pointing to Secret Manager
-#

@@ -20,13 +20,38 @@ resource "google_storage_bucket" "formio_storage" {
     enabled = true
   }
 
-  # Lifecycle management to control costs
+  # Lifecycle management to control costs and improve security
   lifecycle_rule {
+    # Delete old versions after 30 days to control costs
     condition {
-      age = 30
+      age                   = 30
+      with_state            = "ARCHIVED"
+      matches_storage_class = ["NEARLINE", "COLDLINE", "ARCHIVE"]
     }
     action {
       type = "Delete"
+    }
+  }
+
+  lifecycle_rule {
+    # Move to cheaper storage after 7 days for cost optimization
+    condition {
+      age = 7
+    }
+    action {
+      type          = "SetStorageClass"
+      storage_class = "NEARLINE"
+    }
+  }
+
+  lifecycle_rule {
+    # Archive very old data after 90 days
+    condition {
+      age = 90
+    }
+    action {
+      type          = "SetStorageClass"
+      storage_class = "ARCHIVE"
     }
   }
 

@@ -35,6 +35,12 @@ variable "authorized_members" {
   }
 }
 
+variable "enable_load_balancer" {
+  description = "Enable load balancer access (grants allUsers access for load balancer backends)"
+  type        = bool
+  default     = false
+}
+
 # Form.io Edition Configuration
 variable "use_enterprise" {
   description = "Whether to use Form.io Enterprise edition"
@@ -179,7 +185,7 @@ variable "custom_domains" {
   description = "List of custom domains for whitelabeling (will be activated when DNS is configured)"
   type        = list(string)
   default     = []
-  
+
   validation {
     condition = alltrue([
       for domain in var.custom_domains :

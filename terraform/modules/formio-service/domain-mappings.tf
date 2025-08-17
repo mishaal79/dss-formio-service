@@ -4,14 +4,14 @@
 # Domain mappings for custom domains (whitelabeling)
 resource "google_cloud_run_domain_mapping" "custom_domains" {
   for_each = toset(var.custom_domains)
-  
+
   location = var.region
   name     = each.value
-  
+
   spec {
     route_name = google_cloud_run_v2_service.formio_service.name
   }
-  
+
   metadata {
     namespace = var.project_id
     labels    = local.service_labels
