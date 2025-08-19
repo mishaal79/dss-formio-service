@@ -133,4 +133,5 @@ output "secret_manager_secrets" {
 output "secret_validation" {
   description = "Secret validation info (lengths only, for security verification)"
   value       = module.secrets.secret_validation
+  sensitive   = true
 }

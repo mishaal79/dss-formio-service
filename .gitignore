@@ -281,4 +281,7 @@ ssl/
 # - Encrypt Terraform state with customer-managed keys
 # - Review git history before pushing sensitive repositories
 # - Use 'git secrets' or similar tools for additional protection
-# =============================================================================
+# =============================================================================*.tfplan.out
+*.out
+*.tfplan.out
+*.out

@@ -138,6 +138,33 @@ variable "mongodb_connection_string_secret_id" {
 # Infrastructure Dependencies
 # VPC connector removed - using Direct VPC egress with Cloud NAT for cost optimization
 
+variable "enable_cloud_nat" {
+  description = "Enable Cloud NAT gateway for controlled outbound internet access. Required if services need to access public APIs."
+  type        = bool
+  default     = true # Enable by default for production internet access
+}
+
+# Monitoring and alerting configuration
+variable "alert_email_addresses" {
+  description = "List of email addresses to receive alerts for service issues"
+  type        = list(string)
+  default     = []
+}
+
+# Binary Authorization configuration
+variable "enable_binary_authorization" {
+  description = "Enable Binary Authorization for container image security. Requires attestor setup."
+  type        = bool
+  default     = false
+}
+
+variable "attestor_public_key" {
+  description = "PGP public key for Binary Authorization attestor (ASCII armored format)"
+  type        = string
+  default     = ""
+  sensitive   = false # Public key is not sensitive
+}
+
 variable "storage_bucket_name" {
   description = "Name of the GCS bucket for file storage"
   type        = string
@@ -145,25 +172,25 @@ variable "storage_bucket_name" {
 
 # Resource Configuration
 variable "max_instances" {
-  description = "Maximum number of Cloud Run instances"
+  description = "Maximum number of Cloud Run instances. Recommended: 10 for development, 50+ for production with high traffic"
   type        = number
   default     = 10
 }
 
 variable "min_instances" {
-  description = "Minimum number of Cloud Run instances"
+  description = "Minimum number of Cloud Run instances. 0=cold starts (cost-effective), 1=always warm (recommended for production), 2+=high availability"
   type        = number
   default     = 0
 }
 
 variable "cpu_request" {
-  description = "CPU request for each Cloud Run instance"
+  description = "CPU request for each Cloud Run instance. Recommended: 500m (light), 1000m (standard), 2000m (heavy workloads)"
   type        = string
   default     = "1000m"
 }
 
 variable "memory_request" {
-  description = "Memory request for each Cloud Run instance"
+  description = "Memory request for each Cloud Run instance. 1Gi or 2Gi is sufficient for most workloads"
   type        = string
   default     = "2Gi"
 }
