@@ -46,7 +46,7 @@ variable "authorized_members" {
 variable "deploy_community" {
   description = "Whether to deploy Form.io Community edition service"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "deploy_enterprise" {
@@ -246,7 +246,7 @@ variable "portal_enabled" {
 variable "enable_load_balancer" {
   description = "Enable load balancer with Cloud Armor security policies"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_geo_blocking" {

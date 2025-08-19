@@ -72,16 +72,16 @@ resource "google_compute_security_policy" "formio_security_policy" {
     }
   }
 
-  # OWASP Top 10 protection - comprehensive web application security (SECURITY FIX)
+  # OWASP Top 10 protection - comprehensive web application security (SECURITY FIX)  
   rule {
     action   = "deny(403)"
     priority = "200"
     match {
       expr {
-        expression = "evaluatePreconfiguredExpr('owasp-crs-v33-stable')"
+        expression = "evaluatePreconfiguredWaf('sqli-v33-stable') || evaluatePreconfiguredWaf('xss-v33-stable')"
       }
     }
-    description = "OWASP Top 10 comprehensive protection - all attack categories"
+    description = "OWASP Top 10 comprehensive protection - SQLi and XSS detection"
   }
 
   # Advanced bot management - replace basic user-agent blocking
@@ -90,10 +90,10 @@ resource "google_compute_security_policy" "formio_security_policy" {
     priority = "300"
     match {
       expr {
-        expression = "evaluatePreconfiguredExpr('bot-management-stable')"
+        expression = "request.headers['user-agent'].contains('bot') || request.headers['user-agent'].contains('crawler') || request.headers['user-agent'].contains('spider')"
       }
     }
-    description = "Advanced bot detection and blocking"
+    description = "Basic bot detection and blocking"
   }
 
   # Allow health checks from Google
@@ -152,12 +152,17 @@ resource "google_compute_backend_service" "formio_backend" {
   timeout_sec           = 30
   enable_cdn            = false
   security_policy       = google_compute_security_policy.formio_security_policy.id
+  
+  # Session affinity for Form.io stateful operations
+  session_affinity                = "CLIENT_IP"
+  affinity_cookie_ttl_sec        = 3600  # 1 hour
 
   backend {
     group = google_compute_region_network_endpoint_group.formio_neg.id
   }
 
-  health_checks = [google_compute_health_check.formio_health_check.id]
+  # Note: Health checks are not supported for serverless NEGs (Cloud Run)
+  # Cloud Run handles health checks internally
 
   log_config {
     enable      = true
