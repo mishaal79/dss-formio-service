@@ -8,7 +8,7 @@ terraform {
   # Remote state backend for development environment
   # SECURITY: State file contains sensitive data and must be stored securely
   backend "gcs" {
-    bucket = "dss-terraform-state-formio"
+    bucket = "dss-org-tf-state"
     prefix = "formio-service/environments/dev"
 
     # State locking enabled automatically with GCS backend
