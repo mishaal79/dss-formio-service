@@ -106,9 +106,9 @@ output "deployed_services" {
 output "shared_infrastructure_details" {
   description = "Details about shared infrastructure integration"
   value = {
-    using_shared_infra = true # Always using shared infrastructure
+    using_shared_infra = true # Always using shared infrastructure  
     cloud_nat_info     = "Using shared Cloud NAT from gcp-dss-erlich-infra-terraform"
-    nat_ip_address     = google_compute_address.formio_nat_ip.address
+    nat_ip_info        = "NAT IPs managed by shared infrastructure - see gcp-dss-erlich-infra-terraform outputs"
   }
 }
 
@@ -134,4 +134,47 @@ output "secret_validation" {
   description = "Secret validation info (lengths only, for security verification)"
   value       = module.secrets.secret_validation
   sensitive   = true
+}
+
+# =============================================================================
+# CENTRALIZED LOAD BALANCER INTEGRATION OUTPUTS
+# =============================================================================
+
+# Form.io Service Backend Information for Centralized Load Balancer
+output "formio_backend_service_id" {
+  description = "Form.io backend service ID for centralized load balancer"
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : (var.deploy_community ? module.formio-community[0].backend_service_id : null)
+}
+
+output "formio_backend_service_name" {
+  description = "Form.io backend service name for centralized load balancer"
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_name : (var.deploy_community ? module.formio-community[0].backend_service_name : null)
+}
+
+output "formio_backend_service_self_link" {
+  description = "Form.io backend service self link for centralized load balancer"
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_self_link : (var.deploy_community ? module.formio-community[0].backend_service_self_link : null)
+}
+
+output "formio_network_endpoint_group_id" {
+  description = "Form.io Network Endpoint Group ID for centralized load balancer"
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_id : (var.deploy_community ? module.formio-community[0].network_endpoint_group_id : null)
+}
+
+output "formio_network_endpoint_group_name" {
+  description = "Form.io Network Endpoint Group name for centralized load balancer"
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_name : (var.deploy_community ? module.formio-community[0].network_endpoint_group_name : null)
+}
+
+# Centralized load balancer integration summary
+output "centralized_load_balancer_integration" {
+  description = "Summary of backend services and NEGs for centralized load balancer integration"
+  value = {
+    backend_service_id   = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : (var.deploy_community ? module.formio-community[0].backend_service_id : null)
+    backend_service_name = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_name : (var.deploy_community ? module.formio-community[0].backend_service_name : null)
+    neg_id               = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_id : (var.deploy_community ? module.formio-community[0].network_endpoint_group_id : null)
+    neg_name             = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_name : (var.deploy_community ? module.formio-community[0].network_endpoint_group_name : null)
+    edition              = var.deploy_enterprise ? "enterprise" : (var.deploy_community ? "community" : "none")
+    ready_for_lb         = var.deploy_enterprise || var.deploy_community
+  }
 }

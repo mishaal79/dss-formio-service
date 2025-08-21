@@ -66,3 +66,37 @@ output "docker_image" {
   description = "Docker image used by the service"
   value       = local.formio_image
 }
+
+# =============================================================================
+# CENTRALIZED LOAD BALANCER INTEGRATION OUTPUTS
+# =============================================================================
+
+output "backend_service_id" {
+  description = "Backend service ID for centralized load balancer integration"
+  value       = google_compute_backend_service.formio_backend.id
+}
+
+output "backend_service_name" {
+  description = "Backend service name for centralized load balancer integration"
+  value       = google_compute_backend_service.formio_backend.name
+}
+
+output "backend_service_self_link" {
+  description = "Backend service self link for centralized load balancer integration"
+  value       = google_compute_backend_service.formio_backend.self_link
+}
+
+output "network_endpoint_group_id" {
+  description = "Network Endpoint Group ID for centralized load balancer integration"
+  value       = google_compute_region_network_endpoint_group.formio_neg.id
+}
+
+output "network_endpoint_group_name" {
+  description = "Network Endpoint Group name for centralized load balancer integration"
+  value       = google_compute_region_network_endpoint_group.formio_neg.name
+}
+
+output "network_endpoint_group_self_link" {
+  description = "Network Endpoint Group self link for centralized load balancer integration"
+  value       = google_compute_region_network_endpoint_group.formio_neg.self_link
+}

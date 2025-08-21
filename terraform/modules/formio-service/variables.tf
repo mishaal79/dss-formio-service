@@ -20,6 +20,17 @@ variable "labels" {
   default     = {}
 }
 
+# VPC Network Configuration
+variable "vpc_network_id" {
+  description = "The ID of the VPC network for Direct VPC Egress"
+  type        = string
+}
+
+variable "egress_subnet_id" {
+  description = "The ID of the egress subnet for Direct VPC Egress"
+  type        = string
+}
+
 # Security Configuration
 variable "authorized_members" {
   description = "List of members authorized to invoke the Cloud Run service (e.g., user:email@domain.com, serviceAccount:account@project.iam.gserviceaccount.com)"
@@ -35,11 +46,8 @@ variable "authorized_members" {
   }
 }
 
-variable "enable_load_balancer" {
-  description = "Enable load balancer access (grants allUsers access for load balancer backends)"
-  type        = bool
-  default     = false
-}
+# Load balancer configuration removed - now using centralized architecture
+# Backend service and NEG are always created for centralized load balancer integration
 
 # Form.io Edition Configuration
 variable "use_enterprise" {
@@ -216,8 +224,8 @@ variable "custom_domains" {
   validation {
     condition = alltrue([
       for domain in var.custom_domains :
-      can(regex("^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]\\.[a-zA-Z]{2,}$", domain))
+      can(regex("^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\\.[a-zA-Z]{2,}$", domain))
     ])
-    error_message = "All custom domains must be valid domain names"
+    error_message = "All custom domains must be valid domain names (including subdomains)"
   }
 }

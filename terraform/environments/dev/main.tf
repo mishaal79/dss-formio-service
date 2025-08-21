@@ -6,6 +6,19 @@ provider "google" {
   region  = var.region
 }
 
+# =============================================================================
+# SHARED INFRASTRUCTURE INTEGRATION
+# =============================================================================
+
+# Data source to consume shared infrastructure outputs
+data "terraform_remote_state" "shared_infra" {
+  backend = "gcs"
+  config = {
+    bucket = "dss-org-tf-state"
+    prefix = "erlich/${var.environment}" # erlich/dev
+  }
+}
+
 provider "google-beta" {
   project = var.project_id
   region  = var.region
@@ -36,15 +49,8 @@ module "secrets" {
   labels       = local.common_labels
 }
 
-resource "google_compute_address" "formio_nat_ip" {
-  name         = "${var.service_name}-nat-ip-${var.environment}"
-  project      = var.project_id
-  region       = var.region
-  address_type = "EXTERNAL"
-  network_tier = "PREMIUM"
-
-  labels = local.common_labels
-}
+# Legacy NAT IP resource removed - now using shared infrastructure
+# Static IPs are managed by shared Cloud NAT gateway in gcp-dss-erlich-infra-terraform
 
 module "storage" {
   source = "../../modules/storage"
@@ -67,7 +73,7 @@ module "mongodb_atlas" {
 
   atlas_project_name             = "${var.service_name}-${var.environment}"
   atlas_org_id                   = var.mongodb_atlas_org_id
-  cluster_name                   = "${var.service_name}-${var.environment}-flex"
+  cluster_name                   = "${var.service_name}-${var.environment}-cluster"
   backing_provider_name          = "GCP"
   atlas_region_name              = "ASIA_SOUTHEAST_2"
   termination_protection_enabled = var.environment == "prod"
@@ -81,49 +87,15 @@ module "mongodb_atlas" {
   community_database_name  = local.mongodb_community_db_name
   enterprise_database_name = local.mongodb_enterprise_db_name
 
-  cloud_nat_static_ip = "${google_compute_address.formio_nat_ip.address}/32"
+  # cloud_nat_static_ip removed - MongoDB Atlas now accepts all internet traffic
 
   depends_on = [
     module.storage
   ]
 }
 
-module "load_balancer" {
-  count  = var.enable_load_balancer ? 1 : 0
-  source = "../../modules/load-balancer"
-
-  project_id  = var.project_id
-  region      = var.region
-  environment = var.environment
-
-  service_name           = var.service_name
-  cloud_run_service_name = var.deploy_enterprise ? "${var.service_name}-ent-${var.environment}" : "${var.service_name}-com-${var.environment}"
-
-  ssl_domains = var.enable_load_balancer ? (
-    length(var.custom_domains) > 0 ? var.custom_domains :
-    [var.custom_domain != "" ? var.custom_domain : "${var.service_name}.${var.project_id}.com"]
-  ) : []
-
-  enable_geo_blocking           = var.enable_geo_blocking
-  rate_limit_threshold_count    = var.rate_limit_threshold_count
-  rate_limit_threshold_interval = var.rate_limit_threshold_interval
-  rate_limit_ban_duration       = var.rate_limit_ban_duration
-
-  health_check_path   = "/health"
-  health_check_port   = 80
-  backend_timeout_sec = 30
-  enable_cdn          = false
-
-  enable_access_logs = true
-  log_sample_rate    = 1.0
-
-  labels = local.common_labels
-
-  depends_on = [
-    module.storage,
-    module.mongodb_atlas
-  ]
-}
+# Load balancer module removed - now using centralized load balancer architecture
+# Backend services are now created within formio-service modules for centralized integration
 
 module "formio-community" {
   count  = var.deploy_community ? 1 : 0
@@ -133,6 +105,10 @@ module "formio-community" {
   region      = var.region
   environment = var.environment
   labels      = local.common_labels
+
+  # VPC Network Configuration
+  vpc_network_id   = data.terraform_remote_state.shared_infra.outputs.vpc_network_id
+  egress_subnet_id = data.terraform_remote_state.shared_infra.outputs.egress_subnet_id
 
   use_enterprise    = false
   formio_version    = var.formio_version
@@ -158,8 +134,7 @@ module "formio-community" {
   concurrency     = var.concurrency
   timeout_seconds = var.timeout_seconds
 
-  authorized_members   = var.authorized_members
-  enable_load_balancer = var.enable_load_balancer
+  authorized_members = var.authorized_members
 
   depends_on = [
     module.storage,
@@ -175,6 +150,10 @@ module "formio-enterprise" {
   region      = var.region
   environment = var.environment
   labels      = local.common_labels
+
+  # VPC Network Configuration
+  vpc_network_id   = data.terraform_remote_state.shared_infra.outputs.vpc_network_id
+  egress_subnet_id = data.terraform_remote_state.shared_infra.outputs.egress_subnet_id
 
   use_enterprise     = true
   formio_version     = var.formio_version
@@ -201,10 +180,8 @@ module "formio-enterprise" {
   concurrency     = var.concurrency
   timeout_seconds = var.timeout_seconds
 
-  authorized_members   = var.authorized_members
-  enable_load_balancer = var.enable_load_balancer
-
-  custom_domains = var.custom_domains
+  authorized_members = var.authorized_members
+  custom_domains     = var.custom_domains
 
   depends_on = [
     module.storage,

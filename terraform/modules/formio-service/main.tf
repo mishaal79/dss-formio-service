@@ -197,12 +197,8 @@ locals {
         value        = "0.0.0.0"
         value_source = null
       },
-      # Form.io expects PORT env var (as per documentation)
-      {
-        name         = "PORT"
-        value        = "3000"
-        value_source = null
-      }
+      # Cloud Run automatically injects PORT environment variable
+      # Form.io will listen on $PORT (managed by Cloud Run)
     ],
 
     # Enterprise-only LICENSE_KEY
@@ -220,9 +216,8 @@ locals {
     ] : []
   )
 
-  # Extract PORT value for container_port (Cloud Run requirement)
-  port_env_vars  = [for env in local.all_env_vars : env if env.name == "PORT"]
-  container_port = length(local.port_env_vars) > 0 ? tonumber(local.port_env_vars[0].value) : 3000
+  # Form.io expects port 3000 (Cloud Run will inject $PORT=3000)
+  container_port = 3000
 
   # Filter out PORT from environment variables (Cloud Run will inject it automatically)
   filtered_env_vars = [for env in local.all_env_vars : env if env.name != "PORT"]
@@ -305,14 +300,18 @@ resource "google_secret_manager_secret_version" "formio_license_key" {
   secret_data = var.formio_license_key
 }
 
+# =============================================================================
+# CLOUD RUN SERVICE
+# =============================================================================
+
 # Cloud Run Service
 resource "google_cloud_run_v2_service" "formio_service" {
   name     = local.service_name_full
   location = var.region
   project  = var.project_id
 
-  # SECURITY: Force all traffic through load balancer (prevents bypass attacks)
-  ingress = var.enable_load_balancer ? "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" : "INGRESS_TRAFFIC_ALL"
+  # SECURITY: Allow internal load balancer traffic for centralized architecture
+  ingress = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
 
   # Temporarily disable deletion protection for testing
   deletion_protection = false
@@ -338,11 +337,11 @@ resource "google_cloud_run_v2_service" "formio_service" {
     # Routes only private network traffic through VPC (Google APIs use direct routes)
     vpc_access {
       network_interfaces {
-        network    = "projects/erlich-dev/global/networks/erlich-vpc-dev"
-        subnetwork = "projects/erlich-dev/regions/${var.region}/subnetworks/erlich-vpc-egress-subnet-dev"
+        network    = var.vpc_network_id
+        subnetwork = var.egress_subnet_id
         tags       = ["formio-egress"]
       }
-      egress = "PRIVATE_RANGES_ONLY"
+      egress = "ALL_TRAFFIC"
     }
 
     containers {
@@ -364,27 +363,27 @@ resource "google_cloud_run_v2_service" "formio_service" {
         startup_cpu_boost = true
       }
 
-      # Startup probe - essential for proper cold start detection
+      # Startup probe - very lenient settings to allow MongoDB lock resolution
       startup_probe {
         http_get {
           path = "/health"
           port = local.container_port
         }
-        initial_delay_seconds = 0
-        timeout_seconds       = 8  # Must be < period_seconds
-        period_seconds        = 10
-        failure_threshold     = 18 # 3 minutes total startup time (18 * 10s)
+        initial_delay_seconds = 180 # 3 minutes initial delay
+        timeout_seconds       = 30  # 30 second timeout
+        period_seconds        = 60  # Check every minute
+        failure_threshold     = 10  # 10 minutes total startup time (10 * 60s)
       }
 
-      # Health checks - monitors running container health
+      # Health checks - monitors running container health (extended for lock resolution)
       liveness_probe {
         http_get {
           path = "/health"
           port = local.container_port
         }
-        initial_delay_seconds = 30 # Reduced since startup probe handles initial startup
+        initial_delay_seconds = 120 # Extended delay for MongoDB lock resolution
         timeout_seconds       = 30
-        period_seconds        = 30
+        period_seconds        = 60 # Less frequent checks
         failure_threshold     = 3
       }
 
@@ -452,8 +451,7 @@ resource "google_cloud_run_v2_service" "formio_service" {
 }
 
 # Allow authorized access to Cloud Run service
-# When using load balancer, only the load balancer needs access
-# When not using load balancer, allow configured members
+# For centralized load balancer architecture, both authorized users and load balancer need access
 resource "google_cloud_run_service_iam_binding" "authorized_access" {
   count    = length(var.authorized_members) > 0 ? 1 : 0
   location = google_cloud_run_v2_service.formio_service.location
@@ -464,13 +462,69 @@ resource "google_cloud_run_service_iam_binding" "authorized_access" {
   members = var.authorized_members
 }
 
-# Allow load balancer to access Cloud Run service
+# Allow centralized load balancer to access Cloud Run service
 resource "google_cloud_run_service_iam_binding" "load_balancer_access" {
-  count    = var.enable_load_balancer ? 1 : 0
   location = google_cloud_run_v2_service.formio_service.location
   project  = google_cloud_run_v2_service.formio_service.project
   service  = google_cloud_run_v2_service.formio_service.name
   role     = "roles/run.invoker"
 
   members = ["allUsers"]
+}
+
+# =============================================================================
+# BACKEND SERVICE AND NETWORK ENDPOINT GROUP FOR CENTRALIZED LOAD BALANCER
+# =============================================================================
+
+# Network Endpoint Group for Cloud Run service
+resource "google_compute_region_network_endpoint_group" "formio_neg" {
+  name                  = "${var.service_name}-neg-${var.environment}"
+  description           = "Network endpoint group for Form.io ${var.use_enterprise ? "Enterprise" : "Community"} Cloud Run"
+  project               = var.project_id
+  region                = var.region
+  network_endpoint_type = "SERVERLESS"
+
+  cloud_run {
+    service = google_cloud_run_v2_service.formio_service.name
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Backend service for centralized load balancer integration
+resource "google_compute_backend_service" "formio_backend" {
+  name                  = "${var.service_name}-backend-${var.environment}"
+  description           = "Backend service for Form.io ${var.use_enterprise ? "Enterprise" : "Community"} Cloud Run"
+  project               = var.project_id
+  protocol              = "HTTP"
+  port_name             = "http"
+  load_balancing_scheme = "EXTERNAL"
+  timeout_sec           = var.timeout_seconds
+  enable_cdn            = false
+
+  # Session affinity for Form.io stateful operations
+  session_affinity        = "CLIENT_IP"
+  affinity_cookie_ttl_sec = 3600 # 1 hour
+
+  backend {
+    group = google_compute_region_network_endpoint_group.formio_neg.id
+  }
+
+  # Note: Health checks are not supported for serverless NEGs (Cloud Run)
+  # Cloud Run handles health checks internally
+
+  log_config {
+    enable      = true
+    sample_rate = 1.0
+  }
+
+  iap {
+    enabled = false
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }

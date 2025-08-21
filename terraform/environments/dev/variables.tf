@@ -120,8 +120,8 @@ variable "min_instances" {
   type        = number
   default     = 1 # Always keep 1 instance to avoid cold starts for Form.io Enterprise
   validation {
-    condition     = var.min_instances >= 1 && var.min_instances <= 2
-    error_message = "Min instances must be between 1 and 2 for development environment."
+    condition     = var.min_instances >= 0 && var.min_instances <= 2
+    error_message = "Min instances must be between 0 and 2 for development environment."
   }
 }
 
@@ -223,12 +223,14 @@ variable "custom_domain" {
 
 # Custom Domains for Whitelabeling
 variable "custom_domains" {
-  description = "List of custom domains for Form.io whitelabeling (DNS must be configured in org project first)"
+  description = "List of custom domains for Form.io whitelabeling (DNS configured in gcp-dss-erlich-infra-terraform)"
   type        = list(string)
   default = [
-    # Uncomment when DNS is configured in gcp-dss-org-infra-terraform:
-    # "forms.dsselectrical.com.au",
-    # "apply.dsselectrical.com.au"
+    # DNS configured in gcp-dss-erlich-infra-terraform:
+    "forms.dev.cloud.dsselectrical.com.au"
+    # Future domains:
+    # "admin.dev.cloud.dsselectrical.com.au",
+    # "api.dev.cloud.dsselectrical.com.au"
   ]
 }
 
@@ -240,47 +242,9 @@ variable "portal_enabled" {
 }
 
 # =============================================================================
-# LOAD BALANCER AND SECURITY CONFIGURATION
+# LOAD BALANCER CONFIGURATION (REMOVED - NOW USING CENTRALIZED ARCHITECTURE)
 # =============================================================================
 
-variable "enable_load_balancer" {
-  description = "Enable load balancer with Cloud Armor security policies"
-  type        = bool
-  default     = true
-}
-
-variable "enable_geo_blocking" {
-  description = "Enable geographic blocking to allow only Australia traffic (requires load balancer)"
-  type        = bool
-  default     = true
-}
-
-variable "rate_limit_threshold_count" {
-  description = "Number of requests allowed per IP before rate limiting (requires load balancer)"
-  type        = number
-  default     = 100
-  validation {
-    condition     = var.rate_limit_threshold_count >= 10 && var.rate_limit_threshold_count <= 1000
-    error_message = "Rate limit threshold must be between 10 and 1000 requests."
-  }
-}
-
-variable "rate_limit_threshold_interval" {
-  description = "Time window in seconds for rate limiting (requires load balancer)"
-  type        = number
-  default     = 60
-  validation {
-    condition     = var.rate_limit_threshold_interval >= 30 && var.rate_limit_threshold_interval <= 300
-    error_message = "Rate limit interval must be between 30 and 300 seconds."
-  }
-}
-
-variable "rate_limit_ban_duration" {
-  description = "Duration in seconds to ban IPs that exceed rate limits (requires load balancer)"
-  type        = number
-  default     = 600
-  validation {
-    condition     = var.rate_limit_ban_duration >= 300 && var.rate_limit_ban_duration <= 3600
-    error_message = "Ban duration must be between 300 and 3600 seconds (5 minutes to 1 hour)."
-  }
-}
+# Load balancer configuration has been moved to centralized shared infrastructure
+# This service now focuses solely on application deployment and exposes backend services
+# for integration with the centralized load balancer
