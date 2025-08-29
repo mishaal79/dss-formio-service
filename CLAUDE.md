@@ -2,29 +2,39 @@
 
 This file provides guidance to Claude Code when working with this repository.
 
+## Core Principle: Terraform as Single Source of Truth
+
+**All configuration originates from Terraform**. The Makefile dynamically reads values from Terraform outputs, eliminating duplication and ensuring consistency. Never hardcode values that Terraform already knows.
+
 ## Deployment Pattern
 
-**Infrastructure (Terraform)**: VPC, databases, secrets, service definitions
-**Applications (gcloud)**: Container deployments, traffic management, scaling
+**Infrastructure (Terraform)**: VPC, databases, secrets, service definitions, all configuration
+**Applications (gcloud)**: Container deployments using Terraform-provided configuration
 
 ## Essential Commands
 
 ### Infrastructure Management
-- **Setup**: `make dev-setup` → `make infra-apply`
-- **Plan**: `make infra-plan`
-- **Apply**: `make infra-apply` 
+- **Initialize**: `make init`
+- **Plan Changes**: `make plan`
+- **Apply Changes**: `make apply`
+- **Quality Checks**: `make check` (format + lint)
+- **Security Scan**: `make security`
 - **Test**: `make test` (mock validation)
-- **Format**: `make format`
+- **Environment**: `ENV=prod make plan` (target specific environment)
 
 ### Application Deployment  
-- **Deploy Community**: `make deploy-com IMG=formio/formio:v4.6.0`
-- **Deploy Enterprise**: `make deploy-ent IMG=formio/formio-enterprise:9.5.1`
-- **Deploy Both**: `make deploy-all`
-- **Route Traffic**: `make traffic-com-100` or `make traffic-ent-100`
+- **Deploy Enterprise**: `make deploy-ent` (uses Terraform's configured version)
+- **Deploy with Version**: `make deploy-ent IMG=formio/formio-enterprise:9.5.1`
+- **Deploy Community**: `make deploy-com` (if enabled in Terraform)
+- **Deploy Configured**: `make deploy-configured` (uses Terraform versions)
+- **Update Env Vars**: `make update-ent` (sync from Terraform)
+- **Route Traffic**: `make traffic-ent-100` (100% to latest)
 
 ### Monitoring
 - **Status**: `make status`
-- **Logs**: `make logs-com` or `make logs-ent`
+- **Show Versions**: `make show-versions` (configured vs deployed)
+- **Logs**: `make logs-ent` or `make logs-com`
+- **Health Check**: `make health-check`
 
 ### MongoDB Atlas Management
 - **Atlas Console**: `https://cloud.mongodb.com`
@@ -40,8 +50,35 @@ This file provides guidance to Claude Code when working with this repository.
 - **DB**: MongoDB Atlas Flex Cluster (managed, cost-effective)
 - **Storage**: GCS buckets for file uploads
 - **Secrets**: Auto-generated passwords in Secret Manager
-- **Network**: Shared VPC from `gcp-dss-erlich-infra-terraform`
+- **Network**: Central VPC from `gcp-dss-erlich-infra-terraform`
 - **Region**: australia-southeast1
+
+## Single Source of Truth Pattern
+
+**Configuration Flow:**
+1. **Terraform Variables** → Define all configuration
+2. **Terraform Outputs** → Expose configuration for consumption
+3. **Makefile** → Reads from Terraform outputs dynamically
+4. **gcloud Commands** → Use Terraform-provided values
+
+**Values managed by Terraform:**
+- Project ID, Region, Environment
+- Service names (fully qualified)
+- Image versions (configured and deployed)
+- Database names
+- Environment variables
+- All infrastructure configuration
+
+**Example Pattern:**
+```makefile
+# Helper to read Terraform outputs
+define tf_output
+$(shell cd $(TF_DIR) && terraform output -raw $(1) 2>/dev/null || echo $(2))
+endef
+
+# Dynamic configuration from Terraform
+PROJECT_ID := $(call tf_output,project_id,erlich-dev)
+```
 
 ## Environment Setup
 
@@ -77,7 +114,8 @@ export TF_VAR_mongodb_atlas_org_id="your-atlas-org-id"
 
 ## Key Files
 
-- **`Makefile`**: Deployment automation with separation of concerns
+- **`Makefile`**: Deployment automation that reads from Terraform outputs
+- **`terraform/environments/dev/outputs.tf`**: Exposes all configuration for Makefile
 - **`terraform/modules/mongodb-atlas/`**: MongoDB Atlas Terraform module
 - **`terraform/secrets.tf`**: Auto-generates secure passwords
 - **`terraform/environments/dev/`**: Dev environment configuration
@@ -85,11 +123,62 @@ export TF_VAR_mongodb_atlas_org_id="your-atlas-org-id"
 - **`scripts/run-tests.sh`**: Terraform testing framework
 - **`scripts/init-atlas-databases.sh`**: Database initialization script
 
+## Central Infrastructure Integration
+
+**Important**: This service requires manual configuration in the central infrastructure project.
+
+### Integration Steps
+
+1. **Deploy this service** to create backend services:
+   ```bash
+   make infra-apply
+   ```
+
+2. **Get backend service configuration**:
+   ```bash
+   cd terraform/environments/dev
+   terraform output backend_service_configuration
+   ```
+
+3. **Update central infrastructure** (`gcp-dss-erlich-infra-terraform/environments/dev/terraform.tfvars`):
+   ```hcl
+   lb_host_rules = {
+     "forms.dev.cloud.dsselectrical.com.au" = {
+       backend_service_id = "projects/PROJECT_ID/global/backendServices/formio-backend-dev"
+     }
+   }
+   ```
+
+4. **Apply central infrastructure** to activate routing:
+   ```bash
+   cd ../gcp-dss-erlich-infra-terraform/environments/dev
+   terraform apply
+   ```
+
+### Why Manual Configuration?
+- Avoids circular dependencies between Terraform projects
+- Provides explicit configuration control
+- Enables stable production deployments
+- Can be automated via CI/CD pipelines
+
 ## Deployment Workflow
 
-1. **Infrastructure**: `make infra-plan` → `make infra-apply` (one-time)
-2. **Applications**: `make deploy-all IMG=new-version` (frequent)
-3. **Testing**: `make test` before changes
-4. **Monitoring**: `make status` and `make logs-*` for troubleshooting
+### First-Time Setup
+1. **Initialize**: `make init`
+2. **Plan Infrastructure**: `make plan`
+3. **Apply Infrastructure**: `make apply`
+4. **Update Central LB**: Add backend service ID to central infrastructure tfvars
+5. **Deploy Application**: `make deploy-ent` (uses Terraform's configured version)
+
+### Ongoing Deployments
+1. **Deploy New Version**: `make deploy-ent IMG=formio/formio-enterprise:9.5.1`
+2. **Update Env Vars**: `make update-ent` (sync from Terraform)
+3. **Check Status**: `make status` and `make show-versions`
+4. **View Logs**: `make logs-ent`
+
+### Version Management
+- **Check Versions**: `make show-versions` shows configured vs deployed
+- **Deploy Configured**: `make deploy-configured` uses Terraform versions
+- **Override Version**: Provide explicit IMG parameter when needed
 
 **License expires**: 08/29/2025

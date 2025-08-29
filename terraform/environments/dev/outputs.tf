@@ -102,19 +102,35 @@ output "deployed_services" {
   }
 }
 
-# Shared infrastructure integration
-output "shared_infrastructure_details" {
-  description = "Details about shared infrastructure integration"
+# Central infrastructure integration
+output "central_infrastructure_details" {
+  description = "Details about central infrastructure integration"
   value = {
-    using_shared_infra = true # Always using shared infrastructure  
-    cloud_nat_info     = "Using shared Cloud NAT from gcp-dss-erlich-infra-terraform"
-    nat_ip_info        = "NAT IPs managed by shared infrastructure - see gcp-dss-erlich-infra-terraform outputs"
+    using_central_infra = true # Always using central infrastructure  
+    cloud_nat_info      = "Using central Cloud NAT from gcp-dss-erlich-infra-terraform"
+    nat_ip_info         = "NAT IPs managed by central infrastructure - see gcp-dss-erlich-infra-terraform outputs"
   }
 }
 
-output "using_shared_infrastructure" {
-  description = "Whether shared infrastructure is being used"
-  value       = true # Always using shared infrastructure
+output "using_central_infrastructure" {
+  description = "Whether central infrastructure is being used"
+  value       = true # Always using central infrastructure
+}
+
+# Environment Variables for gcloud Updates
+output "enterprise_env_vars" {
+  description = "Environment variables for Enterprise service gcloud updates"
+  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].env_vars_for_gcloud : ""
+}
+
+output "community_env_vars" {
+  description = "Environment variables for Community service gcloud updates"
+  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].env_vars_for_gcloud : ""
+}
+
+output "enterprise_env_vars_debug" {
+  description = "List of environment variables for Enterprise service (for debugging)"
+  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].env_vars_list : []
 }
 
 # Secret Manager Outputs
@@ -134,6 +150,41 @@ output "secret_validation" {
   description = "Secret validation info (lengths only, for security verification)"
   value       = module.secrets.secret_validation
   sensitive   = true
+}
+
+# =============================================================================
+# SERVICE REGISTRATION OUTPUTS FOR CENTRAL INFRASTRUCTURE
+# =============================================================================
+
+# Service registration data for consistent naming and configuration
+output "service_registrations" {
+  description = "Service registration data for both Community and Enterprise editions"
+  value = {
+    community = var.deploy_community && length(module.formio-community) > 0 ? {
+      service_registration    = module.formio-community[0].service_registration
+      service_key             = module.formio-community[0].service_key
+      consistent_backend_name = module.formio-community[0].consistent_backend_name
+    } : null
+    enterprise = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? {
+      service_registration    = module.formio-enterprise[0].service_registration
+      service_key             = module.formio-enterprise[0].service_key
+      consistent_backend_name = module.formio-enterprise[0].consistent_backend_name
+    } : null
+  }
+}
+
+# Primary service registration (for single-service deployments)
+output "primary_service_registration" {
+  description = "Primary service registration data (Enterprise preferred, falls back to Community)"
+  value = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? {
+    service_registration    = module.formio-enterprise[0].service_registration
+    service_key             = module.formio-enterprise[0].service_key
+    consistent_backend_name = module.formio-enterprise[0].consistent_backend_name
+    } : (var.deploy_community && length(module.formio-community) > 0 ? {
+      service_registration    = module.formio-community[0].service_registration
+      service_key             = module.formio-community[0].service_key
+      consistent_backend_name = module.formio-community[0].consistent_backend_name
+  } : null)
 }
 
 # =============================================================================
@@ -176,5 +227,84 @@ output "centralized_load_balancer_integration" {
     neg_name             = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_name : (var.deploy_community ? module.formio-community[0].network_endpoint_group_name : null)
     edition              = var.deploy_enterprise ? "enterprise" : (var.deploy_community ? "community" : "none")
     ready_for_lb         = var.deploy_enterprise || var.deploy_community
+  }
+}
+
+# =============================================================================
+# BACKEND SERVICE CONFIGURATION FOR CENTRAL INFRASTRUCTURE
+# =============================================================================
+
+output "backend_service_configuration" {
+  description = "Configuration to add to central infrastructure tfvars"
+  value = {
+    instructions = "Add the following to gcp-dss-erlich-infra-terraform/environments/${var.environment}/terraform.tfvars:"
+    lb_host_rules = {
+      "forms.${var.environment}.cloud.dsselectrical.com.au" = {
+        backend_service_id = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : (var.deploy_community ? module.formio-community[0].backend_service_id : null)
+      }
+    }
+    note = "After updating tfvars, run 'terraform apply' in the central infrastructure project to activate routing"
+  }
+}
+
+# =============================================================================
+# MAKEFILE CONFIGURATION OUTPUTS
+# =============================================================================
+# These outputs provide all configuration needed by the Makefile,
+# establishing Terraform as the single source of truth
+
+# Service Names (fully qualified)
+output "enterprise_service_name_full" {
+  description = "Full name of the Enterprise Cloud Run service"
+  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].service_name : ""
+}
+
+output "community_service_name_full" {
+  description = "Full name of the Community Cloud Run service"
+  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_name : ""
+}
+
+# Docker Images (configured versions)
+output "enterprise_image_configured" {
+  description = "Configured Docker image for Enterprise edition"
+  value       = var.deploy_enterprise ? "formio/formio-enterprise:${var.formio_version}" : ""
+}
+
+output "community_image_configured" {
+  description = "Configured Docker image for Community edition"
+  value       = var.deploy_community ? "formio/formio:${var.community_version}" : ""
+}
+
+# Docker Images (currently deployed)
+output "enterprise_image_deployed" {
+  description = "Currently deployed Docker image for Enterprise edition"
+  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].docker_image : ""
+}
+
+output "community_image_deployed" {
+  description = "Currently deployed Docker image for Community edition"
+  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].docker_image : ""
+}
+
+# Database Names
+output "enterprise_database_name" {
+  description = "MongoDB database name for Enterprise edition"
+  value       = local.mongodb_enterprise_db_name
+}
+
+output "community_database_name" {
+  description = "MongoDB database name for Community edition"
+  value       = local.mongodb_community_db_name
+}
+
+# Deployment Status
+output "deployment_status" {
+  description = "Current deployment status for Makefile consumption"
+  value = {
+    enterprise_enabled = var.deploy_enterprise
+    community_enabled  = var.deploy_community
+    environment        = var.environment
+    project_id         = var.project_id
+    region             = var.region
   }
 }

@@ -68,6 +68,25 @@ output "docker_image" {
 }
 
 # =============================================================================
+# SERVICE REGISTRATION OUTPUTS FOR SHARED INFRASTRUCTURE
+# =============================================================================
+
+output "service_registration" {
+  description = "Service registration data for centralized load balancer integration"
+  value       = local.service_registration
+}
+
+output "service_key" {
+  description = "Unique service key for identification in centralized load balancer"
+  value       = local.service_key
+}
+
+output "consistent_backend_name" {
+  description = "Mathematically consistent backend service name"
+  value       = local.consistent_backend_name
+}
+
+# =============================================================================
 # CENTRALIZED LOAD BALANCER INTEGRATION OUTPUTS
 # =============================================================================
 
@@ -99,4 +118,71 @@ output "network_endpoint_group_name" {
 output "network_endpoint_group_self_link" {
   description = "Network Endpoint Group self link for centralized load balancer integration"
   value       = google_compute_region_network_endpoint_group.formio_neg.self_link
+}
+
+# =============================================================================
+# MONITORING OUTPUTS
+# =============================================================================
+
+output "monitoring_dashboard_url" {
+  description = "URL to the Cloud Run monitoring dashboard"
+  value       = "https://console.cloud.google.com/run/detail/${var.region}/${google_cloud_run_v2_service.formio_service.name}/metrics?project=${var.project_id}"
+}
+
+output "alert_policies" {
+  description = "Created alert policy names"
+  value = concat(
+    length(var.alert_email_addresses) > 0 ? [
+      google_monitoring_alert_policy.service_availability[0].name,
+      google_monitoring_alert_policy.high_error_rate[0].name,
+      google_monitoring_alert_policy.high_latency[0].name,
+      google_monitoring_alert_policy.database_errors[0].name
+    ] : [],
+    var.use_enterprise && length(var.alert_email_addresses) > 0 ? [
+      google_monitoring_alert_policy.license_errors[0].name
+    ] : []
+  )
+}
+
+# =============================================================================
+# SSL CERTIFICATE OUTPUTS
+# =============================================================================
+
+output "ssl_certificate_names" {
+  description = "Names of the managed SSL certificates"
+  value       = google_compute_managed_ssl_certificate.formio_ssl_cert[*].name
+}
+
+output "domain_mapping_status" {
+  description = "Status of domain mappings (check for DNS requirements)"
+  value = {
+    for idx, domain in var.custom_domains : domain => {
+      name   = google_cloud_run_domain_mapping.formio_domain_mapping[idx].name
+      status = "Check Google Cloud Console for DNS records to configure"
+    }
+  }
+}
+
+# =============================================================================
+# ENVIRONMENT VARIABLES OUTPUT FOR GCLOUD COMMANDS
+# =============================================================================
+
+output "env_vars_for_gcloud" {
+  description = "Non-secret environment variables formatted for gcloud --update-env-vars"
+  value = join(",", [
+    for env in local.filtered_env_vars :
+    "${env.name}=${replace(replace(env.value, ",", "\\,"), "=", "\\=")}"
+    if env.value != null # Skip secrets (they're references, not values)
+  ])
+}
+
+output "env_vars_list" {
+  description = "List of all environment variables (for debugging)"
+  value = [
+    for env in local.filtered_env_vars : {
+      name      = env.name
+      has_value = env.value != null
+      is_secret = env.value_source != null
+    }
+  ]
 }
