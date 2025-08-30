@@ -51,6 +51,35 @@ locals {
   })
 
   # =============================================================================
+  # SERVICE REGISTRATION FOR CENTRALIZED LOAD BALANCER
+  # =============================================================================
+
+  # Service registration configuration for consistent naming
+  service_registration = {
+    service_name = var.service_name
+    service_type = "cloud-run"
+    edition      = var.use_enterprise ? "enterprise" : "community"
+    environment  = var.environment
+    backend_config = {
+      port                    = 80
+      protocol                = "HTTP"
+      load_balancing_scheme   = "EXTERNAL"
+      timeout_sec             = var.timeout_seconds
+      session_affinity        = "CLIENT_IP"
+      affinity_cookie_ttl_sec = 3600
+      enable_cdn              = false
+      enable_logging          = true
+      log_sample_rate         = 1.0
+    }
+  }
+
+  # Generate consistent backend service name using predictable pattern
+  consistent_backend_name = "${local.service_registration.service_name}-backend-${local.service_registration.environment}"
+
+  # Service key for identification in centralized load balancer
+  service_key = "${local.service_registration.service_type}-${local.service_registration.edition}-${local.service_registration.environment}"
+
+  # =============================================================================
   # INTELLIGENT PORT HANDLING FOR CLOUD RUN V2
   # Cloud Run v2 reserves PORT env var, so we extract it and use for container_port
   # =============================================================================
@@ -197,6 +226,16 @@ locals {
         value        = "0.0.0.0"
         value_source = null
       },
+      {
+        name         = "BASE_URL"
+        value        = var.base_url != "" ? var.base_url : "https://forms.${var.environment}.cloud.dsselectrical.com.au"
+        value_source = null
+      },
+      {
+        name         = "TRUST_PROXY"
+        value        = "true"
+        value_source = null
+      },
       # Cloud Run automatically injects PORT environment variable
       # Form.io will listen on $PORT (managed by Cloud Run)
     ],
@@ -333,7 +372,7 @@ resource "google_cloud_run_v2_service" "formio_service" {
       "run.googleapis.com/execution-environment" = "gen2"
     }
 
-    # Direct VPC egress using shared infrastructure egress subnet
+    # Direct VPC egress using central infrastructure egress subnet
     # Routes only private network traffic through VPC (Google APIs use direct routes)
     vpc_access {
       network_interfaces {
@@ -495,7 +534,7 @@ resource "google_compute_region_network_endpoint_group" "formio_neg" {
 
 # Backend service for centralized load balancer integration
 resource "google_compute_backend_service" "formio_backend" {
-  name                  = "${var.service_name}-backend-${var.environment}"
+  name                  = local.consistent_backend_name
   description           = "Backend service for Form.io ${var.use_enterprise ? "Enterprise" : "Community"} Cloud Run"
   project               = var.project_id
   protocol              = "HTTP"

@@ -245,6 +245,6 @@ variable "portal_enabled" {
 # LOAD BALANCER CONFIGURATION (REMOVED - NOW USING CENTRALIZED ARCHITECTURE)
 # =============================================================================
 
-# Load balancer configuration has been moved to centralized shared infrastructure
+# Load balancer configuration has been moved to centralized central infrastructure
 # This service now focuses solely on application deployment and exposes backend services
 # for integration with the centralized load balancer

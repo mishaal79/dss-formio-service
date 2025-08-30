@@ -135,17 +135,9 @@ variable "storage_bucket_name" {
 }
 
 variable "vpc_connector_id" {
-  description = "VPC connector ID for private networking (supports shared infrastructure)"
+  description = "VPC connector ID for private networking (supports central infrastructure)"
   type        = string
   default     = null
-}
-
-# PostgreSQL Configuration (New)
-variable "postgresql_connection_string" {
-  description = "PostgreSQL connection string for custom integrations"
-  type        = string
-  default     = ""
-  sensitive   = true
 }
 
 # Event-driven Configuration (New)
@@ -157,13 +149,6 @@ variable "webhook_url" {
 
 variable "pubsub_topic_name" {
   description = "Pub/Sub topic name for form events"
-  type        = string
-  default     = ""
-}
-
-# Custom API Layer Configuration (New)
-variable "custom_api_url" {
-  description = "Custom API layer URL for PostgreSQL integration"
   type        = string
   default     = ""
 }

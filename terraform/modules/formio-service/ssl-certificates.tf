@@ -42,21 +42,7 @@ resource "google_cloud_run_domain_mapping" "formio_domain_mapping" {
   depends_on = [google_cloud_run_v2_service.formio_service]
 }
 
-# Output SSL certificate information for DNS configuration
-output "ssl_certificate_names" {
-  description = "Names of the managed SSL certificates"
-  value       = google_compute_managed_ssl_certificate.formio_ssl_cert[*].name
-}
-
-output "domain_mapping_status" {
-  description = "Status of domain mappings (check for DNS requirements)"
-  value = {
-    for idx, domain in var.custom_domains : domain => {
-      name   = google_cloud_run_domain_mapping.formio_domain_mapping[idx].name
-      status = "Check Google Cloud Console for DNS records to configure"
-    }
-  }
-}
+# Outputs moved to outputs.tf for proper Terraform module structure
 
 # =============================================================================
 # IMPLEMENTATION NOTES:

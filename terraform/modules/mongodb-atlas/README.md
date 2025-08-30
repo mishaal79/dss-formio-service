@@ -24,7 +24,7 @@ module "mongodb_atlas" {
   # MongoDB Atlas configuration
   atlas_project_name    = "my-project-dev"
   atlas_org_id          = var.mongodb_atlas_org_id
-  cluster_name          = "my-cluster-dev-flex"
+  cluster_name          = "my-cluster-dev-cluster"
   backing_provider_name = "GCP"
   atlas_region_name     = "AUSTRALIA_SOUTHEAST_1"
 

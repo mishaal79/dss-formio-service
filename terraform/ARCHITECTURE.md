@@ -2,16 +2,16 @@
 
 ## Overview
 
-This Terraform module deploys Form.io Enterprise and Community services on Google Cloud Platform using **shared infrastructure**. The module does not manage VPC resources - it consumes shared networking infrastructure managed by `gcp-dss-erlich-infra-terraform`.
+This Terraform module deploys Form.io Enterprise and Community services on Google Cloud Platform using **central infrastructure**. The module does not manage VPC resources - it consumes central networking infrastructure managed by `gcp-dss-erlich-infra-terraform`.
 
 ## Architecture Principles
 
-### Shared Infrastructure Model
+### Central Infrastructure Model
 - **VPC Management**: All networking resources are managed centrally by `gcp-dss-erlich-infra-terraform`
 - **Service Module**: This module focuses on service deployment, not infrastructure
 - **Separation of Concerns**: Infrastructure vs. Application deployment are handled separately
 
-### Why Shared VPC?
+### Why Central VPC?
 
 1. **Service Integration**: Form.io needs to communicate with MongoDB and other services
 2. **License Validation**: Form.io Enterprise requires internet egress for license validation
@@ -23,7 +23,7 @@ This Terraform module deploys Form.io Enterprise and Community services on Googl
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              erlich-vpc-dev (Shared VPC)                │
+│              erlich-vpc-dev (Central VPC)               │
 │         Managed by: gcp-dss-erlich-infra-terraform     │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
@@ -57,7 +57,7 @@ This Terraform module deploys Form.io Enterprise and Community services on Googl
 └─────────────────────────────────────────────────────────┘
 ```
 
-## Required Shared Infrastructure
+## Required Central Infrastructure
 
 This module requires the following resources from `gcp-dss-erlich-infra-terraform`:
 
@@ -77,7 +77,7 @@ This module requires the following resources from `gcp-dss-erlich-infra-terrafor
 - **Critical For**: MongoDB connectivity and license validation
 
 ### Network Security
-- **Firewall Rules**: Managed by shared infrastructure
+- **Firewall Rules**: Managed by central infrastructure
 - **NAT Gateway**: Provides controlled internet egress
 - **Private Google Access**: For GCP services
 
@@ -142,20 +142,20 @@ This module requires the following resources from `gcp-dss-erlich-infra-terrafor
 ## Migration Notes
 
 ### Previous Architecture Issues
-- **Dual VPC Problem**: Previously created both local and shared VPC
+- **Dual VPC Problem**: Previously created both local and central VPC
 - **Conditional Logic**: Complex conditional network resource creation
 - **Resource Conflicts**: State management issues with mixed VPC usage
 
 ### Current Architecture Benefits
-- **Single Source of Truth**: Shared VPC managed centrally
-- **Clear Dependencies**: Explicit requirement for shared infrastructure
+- **Single Source of Truth**: Central VPC managed centrally
+- **Clear Dependencies**: Explicit requirement for central infrastructure
 - **Simplified Logic**: No conditional network resource creation
-- **Better Testing**: Fail-fast validation for missing shared resources
+- **Better Testing**: Fail-fast validation for missing central resources
 
 ## Deployment Requirements
 
 ### Prerequisites Checklist
-- [ ] Shared infrastructure deployed (`gcp-dss-erlich-infra-terraform`)
+- [ ] Central infrastructure deployed (`gcp-dss-erlich-infra-terraform`)
 - [ ] VPC connector accessible from target region
 - [ ] Form.io license key available
 - [ ] Admin email address configured
@@ -163,7 +163,7 @@ This module requires the following resources from `gcp-dss-erlich-infra-terrafor
 
 ### Validation Commands
 ```bash
-# Verify shared VPC exists
+# Verify central VPC exists
 gcloud compute networks describe erlich-vpc-dev --project=erlich-dev
 
 # Verify VPC connector exists  
@@ -171,5 +171,5 @@ gcloud compute networks vpc-access connectors describe erlich-vpc-connector-dev 
   --region=australia-southeast1 --project=erlich-dev
 
 # Verify remote state access
-terraform console <<< "data.terraform_remote_state.shared_infra.outputs"
+terraform console <<< "data.terraform_remote_state.central_infra.outputs"
 ```

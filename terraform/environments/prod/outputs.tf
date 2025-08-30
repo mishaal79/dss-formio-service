@@ -102,19 +102,114 @@ output "deployed_services" {
   }
 }
 
-# Shared infrastructure integration
-output "shared_infrastructure_details" {
-  description = "Details about shared infrastructure integration"
+# Central infrastructure integration
+output "central_infrastructure_details" {
+  description = "Details about central infrastructure integration"
   value = {
-    using_shared_infra = true # Always using shared infrastructure
-    cloud_nat_info     = "Using shared Cloud NAT from gcp-dss-erlich-infra-terraform"
-    nat_ip_address     = google_compute_address.formio_nat_ip.address
+    using_central_infra = true # Always using central infrastructure
+    cloud_nat_info      = "Using central Cloud NAT from gcp-dss-erlich-infra-terraform"
+    vpc_network_id      = try(data.terraform_remote_state.central_infra.outputs.vpc_network_id, "central-infrastructure")
   }
 }
 
-output "using_shared_infrastructure" {
-  description = "Whether shared infrastructure is being used"
-  value       = true # Always using shared infrastructure
+output "using_central_infrastructure" {
+  description = "Whether central infrastructure is being used"
+  value       = true # Always using central infrastructure
+}
+
+# =============================================================================
+# SERVICE REGISTRATION OUTPUTS FOR CENTRAL INFRASTRUCTURE
+# =============================================================================
+
+# Service registration data for consistent naming and configuration
+output "service_registrations" {
+  description = "Service registration data for both Community and Enterprise editions"
+  value = {
+    community = var.deploy_community && length(module.formio-community) > 0 ? {
+      service_registration    = module.formio-community[0].service_registration
+      service_key             = module.formio-community[0].service_key
+      consistent_backend_name = module.formio-community[0].consistent_backend_name
+    } : null
+    enterprise = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? {
+      service_registration    = module.formio-enterprise[0].service_registration
+      service_key             = module.formio-enterprise[0].service_key
+      consistent_backend_name = module.formio-enterprise[0].consistent_backend_name
+    } : null
+  }
+}
+
+# Primary service registration (for single-service deployments)
+output "primary_service_registration" {
+  description = "Primary service registration data (Enterprise preferred, falls back to Community)"
+  value = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? {
+    service_registration    = module.formio-enterprise[0].service_registration
+    service_key             = module.formio-enterprise[0].service_key
+    consistent_backend_name = module.formio-enterprise[0].consistent_backend_name
+    } : (var.deploy_community && length(module.formio-community) > 0 ? {
+      service_registration    = module.formio-community[0].service_registration
+      service_key             = module.formio-community[0].service_key
+      consistent_backend_name = module.formio-community[0].consistent_backend_name
+  } : null)
+}
+
+# =============================================================================
+# CENTRALIZED LOAD BALANCER INTEGRATION OUTPUTS
+# =============================================================================
+
+# Form.io Service Backend Information for Centralized Load Balancer
+output "formio_backend_service_id" {
+  description = "Form.io backend service ID for centralized load balancer"
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : (var.deploy_community ? module.formio-community[0].backend_service_id : null)
+}
+
+output "formio_backend_service_name" {
+  description = "Form.io backend service name for centralized load balancer"
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_name : (var.deploy_community ? module.formio-community[0].backend_service_name : null)
+}
+
+output "formio_backend_service_self_link" {
+  description = "Form.io backend service self link for centralized load balancer"
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_self_link : (var.deploy_community ? module.formio-community[0].backend_service_self_link : null)
+}
+
+output "formio_network_endpoint_group_id" {
+  description = "Form.io Network Endpoint Group ID for centralized load balancer"
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_id : (var.deploy_community ? module.formio-community[0].network_endpoint_group_id : null)
+}
+
+output "formio_network_endpoint_group_name" {
+  description = "Form.io Network Endpoint Group name for centralized load balancer"
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_name : (var.deploy_community ? module.formio-community[0].network_endpoint_group_name : null)
+}
+
+# Centralized load balancer integration summary
+output "centralized_load_balancer_integration" {
+  description = "Summary of backend services and NEGs for centralized load balancer integration"
+  value = {
+    backend_service_id   = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : (var.deploy_community ? module.formio-community[0].backend_service_id : null)
+    backend_service_name = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_name : (var.deploy_community ? module.formio-community[0].backend_service_name : null)
+    neg_id               = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_id : (var.deploy_community ? module.formio-community[0].network_endpoint_group_id : null)
+    neg_name             = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_name : (var.deploy_community ? module.formio-community[0].network_endpoint_group_name : null)
+    edition              = var.deploy_enterprise ? "enterprise" : (var.deploy_community ? "community" : "none")
+    ready_for_lb         = var.deploy_enterprise || var.deploy_community
+  }
+}
+
+# =============================================================================
+# BACKEND SERVICE CONFIGURATION FOR CENTRAL INFRASTRUCTURE
+# =============================================================================
+
+output "backend_service_configuration" {
+  description = "Configuration to add to central infrastructure tfvars"
+  value = {
+    instructions = "Add the following to gcp-dss-erlich-infra-terraform/environments/${var.environment}/terraform.tfvars:"
+    lb_host_rules = {
+      "forms.${var.environment}.cloud.dsselectrical.com.au" = {
+        backend_service_id = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : (var.deploy_community ? module.formio-community[0].backend_service_id : null)
+      }
+    }
+    note = "After updating tfvars, run 'terraform apply' in the central infrastructure project to activate routing"
+  }
 }
 
 # Secret Manager Outputs

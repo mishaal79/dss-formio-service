@@ -28,11 +28,11 @@ resource "mongodbatlas_project" "main" {
   tags = local.cluster_tags
 }
 
-# Allow access from shared VPC egress subnet (secure connectivity)
-resource "mongodbatlas_project_ip_access_list" "cloud_nat_access" {
+# Simplified IP access - allow all internet traffic (security via TLS + credentials)
+resource "mongodbatlas_project_ip_access_list" "internet_access" {
   project_id = mongodbatlas_project.main.id
-  cidr_block = var.cloud_nat_static_ip # Now contains CIDR range from egress subnet
-  comment    = "Shared VPC egress subnet - secure Form.io connectivity via Cloud NAT"
+  cidr_block = "0.0.0.0/0"
+  comment    = "Allow all internet traffic - security via TLS encryption and MongoDB credentials"
 }
 
 # Data sources to retrieve passwords from Secret Manager
@@ -175,5 +175,5 @@ resource "google_secret_manager_secret" "mongodb_connection_string" {
 resource "google_secret_manager_secret_version" "mongodb_connection_string" {
   secret = google_secret_manager_secret.mongodb_connection_string.id
   # Form.io expects standard MongoDB connection string format: mongodb://username:password@host:port/database?ssl=true
-  secret_data = "mongodb://${urlencode(mongodbatlas_database_user.formio_community.username)}:${urlencode(data.google_secret_manager_secret_version.formio_password.secret_data)}@${replace(mongodbatlas_flex_cluster.main.connection_strings.standard, "mongodb://", "")}/${var.database_name}?ssl=true"
+  secret_data = "mongodb://${urlencode(mongodbatlas_database_user.formio_community.username)}:${urlencode(data.google_secret_manager_secret_version.formio_password.secret_data)}@${replace(mongodbatlas_flex_cluster.main.connection_strings.standard, "mongodb://", "")}/${var.community_database_name}?ssl=true"
 }

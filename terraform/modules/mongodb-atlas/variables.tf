@@ -5,10 +5,7 @@ variable "project_id" {
   type        = string
 }
 
-variable "region" {
-  description = "The GCP region"
-  type        = string
-}
+# Removed: region - not used by MongoDB Atlas module
 
 variable "environment" {
   description = "Environment name (dev, staging, prod)"
@@ -78,11 +75,7 @@ variable "formio_username" {
   default     = "formioUser"
 }
 
-variable "database_name" {
-  description = "Base name of the database to create for Form.io"
-  type        = string
-  default     = "formio"
-}
+# Removed: database_name - not used, databases named via community/enterprise variables
 
 variable "community_database_name" {
   description = "Full name of the Community database"
@@ -94,11 +87,10 @@ variable "enterprise_database_name" {
   type        = string
 }
 
-# Network Security Configuration
-variable "cloud_nat_static_ip" {
-  description = "CIDR block for VPC egress subnet or static IP for secure Atlas connectivity"
-  type        = string
-}
+# Network Security Configuration - REMOVED
+# Simplified approach: MongoDB Atlas accepts all internet traffic (0.0.0.0/0)
+# Security provided by TLS encryption + MongoDB credentials
+# cloud_nat_static_ip variable no longer needed
 
 # Secret Manager Configuration
 variable "admin_password_secret_id" {

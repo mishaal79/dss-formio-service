@@ -274,6 +274,25 @@ localhost.crt
 localhost.key
 ssl/
 
+# Serena tool directories and files
+.serena/
+
+# Session and temporary files
+*session-start-hook*
+*.session
+*.tmp.txt
+
+# Local testing directories
+local-testing/
+local-test/
+local-dev/
+
+# Terraform plan output files
+*.tfplan
+*.tfplan.out
+*.out
+tfplan
+
 # =============================================================================
 # IMPORTANT SECURITY REMINDERS:
 # - Never commit .env files with real secrets
@@ -281,7 +300,4 @@ ssl/
 # - Encrypt Terraform state with customer-managed keys
 # - Review git history before pushing sensitive repositories
 # - Use 'git secrets' or similar tools for additional protection
-# =============================================================================*.tfplan.out
-*.out
-*.tfplan.out
-*.out
+# =============================================================================

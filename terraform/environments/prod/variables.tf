@@ -240,47 +240,8 @@ variable "portal_enabled" {
 }
 
 # =============================================================================
-# LOAD BALANCER AND SECURITY CONFIGURATION
+# LOAD BALANCER CONFIGURATION - DEPRECATED
 # =============================================================================
-
-variable "enable_load_balancer" {
-  description = "Enable load balancer with Cloud Armor security policies"
-  type        = bool
-  default     = false
-}
-
-variable "enable_geo_blocking" {
-  description = "Enable geographic blocking to allow only Australia traffic (requires load balancer)"
-  type        = bool
-  default     = true
-}
-
-variable "rate_limit_threshold_count" {
-  description = "Number of requests allowed per IP before rate limiting (requires load balancer)"
-  type        = number
-  default     = 100
-  validation {
-    condition     = var.rate_limit_threshold_count >= 10 && var.rate_limit_threshold_count <= 1000
-    error_message = "Rate limit threshold must be between 10 and 1000 requests."
-  }
-}
-
-variable "rate_limit_threshold_interval" {
-  description = "Time window in seconds for rate limiting (requires load balancer)"
-  type        = number
-  default     = 60
-  validation {
-    condition     = var.rate_limit_threshold_interval >= 30 && var.rate_limit_threshold_interval <= 300
-    error_message = "Rate limit interval must be between 30 and 300 seconds."
-  }
-}
-
-variable "rate_limit_ban_duration" {
-  description = "Duration in seconds to ban IPs that exceed rate limits (requires load balancer)"
-  type        = number
-  default     = 600
-  validation {
-    condition     = var.rate_limit_ban_duration >= 300 && var.rate_limit_ban_duration <= 3600
-    error_message = "Ban duration must be between 300 and 3600 seconds (5 minutes to 1 hour)."
-  }
-}
+# Load balancer configuration has been removed.
+# This service now uses the centralized load balancer architecture
+# managed by the central infrastructure repository (gcp-dss-erlich-infra-terraform)

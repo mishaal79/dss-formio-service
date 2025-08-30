@@ -7,12 +7,10 @@
 
 provider "google" {
   project = var.project_id
-  region  = var.region
 }
 
 provider "google-beta" {
   project = var.project_id
-  region  = var.region
 }
 
 provider "mongodbatlas" {
@@ -28,7 +26,14 @@ provider "mongodbatlas" {
 # DATA SOURCES
 # =============================================================================
 
-# Data sources removed - not currently used in this deployment pattern
+# Data source to consume central infrastructure outputs
+data "terraform_remote_state" "central_infra" {
+  backend = "gcs"
+  config = {
+    bucket = "dss-org-tf-state"
+    prefix = "erlich/${var.environment}" # erlich/prod
+  }
+}
 
 # =============================================================================
 # LOCAL VALUES
@@ -66,17 +71,8 @@ module "secrets" {
 # NETWORKING INFRASTRUCTURE
 # =============================================================================
 
-# Static external IP for Cloud NAT (for MongoDB Atlas access)
-resource "google_compute_address" "formio_nat_ip" {
-  name         = "${var.service_name}-nat-ip-${var.environment}"
-  description  = "Static external IP for Form.io Cloud NAT gateway (MongoDB Atlas access)"
-  project      = var.project_id
-  region       = var.region
-  address_type = "EXTERNAL"
-  network_tier = "PREMIUM"
-
-  labels = local.common_labels
-}
+# Legacy NAT IP resource removed - now using central infrastructure  
+# Static IPs are managed by central Cloud NAT gateway in gcp-dss-erlich-infra-terraform
 
 # =============================================================================
 # INFRASTRUCTURE MODULES
@@ -99,14 +95,13 @@ module "mongodb_atlas" {
   source = "../../modules/mongodb-atlas"
 
   project_id  = var.project_id
-  region      = var.region
   environment = var.environment
   labels      = local.common_labels
 
   # MongoDB Atlas configuration
   atlas_project_name             = "${var.service_name}-${var.environment}"
   atlas_org_id                   = var.mongodb_atlas_org_id
-  cluster_name                   = "${var.service_name}-${var.environment}-flex"
+  cluster_name                   = "${var.service_name}-${var.environment}-cluster"
   backing_provider_name          = "GCP"
   atlas_region_name              = "ASIA_SOUTHEAST_2"
   termination_protection_enabled = var.environment == "prod"
@@ -116,62 +111,21 @@ module "mongodb_atlas" {
   admin_password_secret_id  = module.secrets.mongodb_admin_password_secret_id
   formio_username           = var.mongodb_formio_username
   formio_password_secret_id = module.secrets.mongodb_formio_password_secret_id
-  database_name             = var.mongodb_database_name
 
   # Pass database name constants for consistent naming
   community_database_name  = local.mongodb_community_db_name
   enterprise_database_name = local.mongodb_enterprise_db_name
 
-  # Network security - restrict access to dynamically managed Cloud NAT external IP
-  cloud_nat_static_ip = "${google_compute_address.formio_nat_ip.address}/32"
+  # Network security simplified - MongoDB Atlas now accepts all internet traffic
+  # cloud_nat_static_ip removed - using 0.0.0.0/0 with TLS + credentials security
 
   depends_on = [
     module.storage
   ]
 }
 
-# Load Balancer with Cloud Armor Security (optional)
-module "load_balancer" {
-  count  = var.enable_load_balancer ? 1 : 0
-  source = "../../modules/load-balancer"
-
-  project_id  = var.project_id
-  region      = var.region
-  environment = var.environment
-
-  # Service configuration
-  service_name           = var.service_name
-  cloud_run_service_name = var.deploy_enterprise ? "${var.service_name}-ent-${var.environment}" : "${var.service_name}-com-${var.environment}"
-
-  # SSL configuration for custom domains
-  ssl_domains = var.enable_load_balancer ? (
-    length(var.custom_domains) > 0 ? var.custom_domains :
-    [var.custom_domain != "" ? var.custom_domain : "${var.service_name}.${var.project_id}.com"]
-  ) : []
-
-  # Security configuration
-  enable_geo_blocking           = var.enable_geo_blocking
-  rate_limit_threshold_count    = var.rate_limit_threshold_count
-  rate_limit_threshold_interval = var.rate_limit_threshold_interval
-  rate_limit_ban_duration       = var.rate_limit_ban_duration
-
-  # Backend configuration
-  health_check_path   = "/health"
-  health_check_port   = 80
-  backend_timeout_sec = 30
-  enable_cdn          = false
-
-  # Logging
-  enable_access_logs = true
-  log_sample_rate    = 1.0
-
-  labels = local.common_labels
-
-  depends_on = [
-    module.storage,
-    module.mongodb_atlas
-  ]
-}
+# Load balancer module removed - now using centralized load balancer architecture
+# Backend services are now created within formio-service modules for centralized integration
 
 # Form.io Community Edition Service
 module "formio-community" {
@@ -213,8 +167,11 @@ module "formio-community" {
   timeout_seconds = var.timeout_seconds
 
   # Security configuration
-  authorized_members   = var.authorized_members
-  enable_load_balancer = var.enable_load_balancer
+  authorized_members = var.authorized_members
+
+  # VPC Network Configuration
+  vpc_network_id   = data.terraform_remote_state.central_infra.outputs.vpc_network_id
+  egress_subnet_id = data.terraform_remote_state.central_infra.outputs.egress_subnet_id
 
   depends_on = [
     module.storage,
@@ -263,8 +220,11 @@ module "formio-enterprise" {
   timeout_seconds = var.timeout_seconds
 
   # Security configuration
-  authorized_members   = var.authorized_members
-  enable_load_balancer = var.enable_load_balancer
+  authorized_members = var.authorized_members
+
+  # VPC Network Configuration
+  vpc_network_id   = data.terraform_remote_state.central_infra.outputs.vpc_network_id
+  egress_subnet_id = data.terraform_remote_state.central_infra.outputs.egress_subnet_id
 
   # Custom domains for whitelabeling
   custom_domains = var.custom_domains

@@ -27,7 +27,7 @@
 # - Cost-optimized port allocation
 #
 # Architecture decision:
-# - Option A: Implement in shared infrastructure repo (recommended)
+# - Option A: Implement in central infrastructure repo (recommended)
 # - Option B: Implement in this module (service-specific)
 #
 # =============================================================================

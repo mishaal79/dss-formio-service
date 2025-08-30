@@ -58,7 +58,7 @@ check_env_vars() {
         echo "  export MONGODB_ATLAS_PUBLIC_KEY='your-public-key'"
         echo "  export MONGODB_ATLAS_PRIVATE_KEY='your-private-key'"
         echo "  export TF_VAR_mongodb_atlas_org_id='your-org-id'"
-        echo "  export MONGODB_CLUSTER_NAME='dss-formio-api-dev-flex'"
+        echo "  export MONGODB_CLUSTER_NAME='dss-formio-api-dev-cluster'"
         echo "  export MONGODB_ADMIN_USERNAME='mongoAdmin'"
         echo "  export MONGODB_FORMIO_PASSWORD='your-formio-password'"
         exit 1

@@ -7,11 +7,11 @@ provider "google" {
 }
 
 # =============================================================================
-# SHARED INFRASTRUCTURE INTEGRATION
+# CENTRAL INFRASTRUCTURE INTEGRATION
 # =============================================================================
 
-# Data source to consume shared infrastructure outputs
-data "terraform_remote_state" "shared_infra" {
+# Data source to consume central infrastructure outputs
+data "terraform_remote_state" "central_infra" {
   backend = "gcs"
   config = {
     bucket = "dss-org-tf-state"
@@ -49,8 +49,8 @@ module "secrets" {
   labels       = local.common_labels
 }
 
-# Legacy NAT IP resource removed - now using shared infrastructure
-# Static IPs are managed by shared Cloud NAT gateway in gcp-dss-erlich-infra-terraform
+# Legacy NAT IP resource removed - now using central infrastructure
+# Static IPs are managed by central Cloud NAT gateway in gcp-dss-erlich-infra-terraform
 
 module "storage" {
   source = "../../modules/storage"
@@ -67,7 +67,6 @@ module "mongodb_atlas" {
   source = "../../modules/mongodb-atlas"
 
   project_id  = var.project_id
-  region      = var.region
   environment = var.environment
   labels      = local.common_labels
 
@@ -82,7 +81,6 @@ module "mongodb_atlas" {
   admin_password_secret_id  = module.secrets.mongodb_admin_password_secret_id
   formio_username           = var.mongodb_formio_username
   formio_password_secret_id = module.secrets.mongodb_formio_password_secret_id
-  database_name             = var.mongodb_database_name
 
   community_database_name  = local.mongodb_community_db_name
   enterprise_database_name = local.mongodb_enterprise_db_name
@@ -95,7 +93,7 @@ module "mongodb_atlas" {
 }
 
 # Load balancer module removed - now using centralized load balancer architecture
-# Backend services are now created within formio-service modules for centralized integration
+# Backend services are now created within formio-service modules for central infrastructure integration
 
 module "formio-community" {
   count  = var.deploy_community ? 1 : 0
@@ -107,8 +105,8 @@ module "formio-community" {
   labels      = local.common_labels
 
   # VPC Network Configuration
-  vpc_network_id   = data.terraform_remote_state.shared_infra.outputs.vpc_network_id
-  egress_subnet_id = data.terraform_remote_state.shared_infra.outputs.egress_subnet_id
+  vpc_network_id   = data.terraform_remote_state.central_infra.outputs.vpc_network_id
+  egress_subnet_id = data.terraform_remote_state.central_infra.outputs.egress_subnet_id
 
   use_enterprise    = false
   formio_version    = var.formio_version
@@ -152,8 +150,8 @@ module "formio-enterprise" {
   labels      = local.common_labels
 
   # VPC Network Configuration
-  vpc_network_id   = data.terraform_remote_state.shared_infra.outputs.vpc_network_id
-  egress_subnet_id = data.terraform_remote_state.shared_infra.outputs.egress_subnet_id
+  vpc_network_id   = data.terraform_remote_state.central_infra.outputs.vpc_network_id
+  egress_subnet_id = data.terraform_remote_state.central_infra.outputs.egress_subnet_id
 
   use_enterprise     = true
   formio_version     = var.formio_version

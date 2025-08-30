@@ -167,26 +167,4 @@ resource "google_monitoring_alert_policy" "license_errors" {
   notification_channels = google_monitoring_notification_channel.email_alerts[*].name
 }
 
-# =============================================================================
-# OUTPUTS
-# =============================================================================
-
-output "monitoring_dashboard_url" {
-  description = "URL to the Cloud Run monitoring dashboard"
-  value       = "https://console.cloud.google.com/run/detail/${var.region}/${google_cloud_run_v2_service.formio_service.name}/metrics?project=${var.project_id}"
-}
-
-output "alert_policies" {
-  description = "Created alert policy names"
-  value = concat(
-    length(var.alert_email_addresses) > 0 ? [
-      google_monitoring_alert_policy.service_availability[0].name,
-      google_monitoring_alert_policy.high_error_rate[0].name,
-      google_monitoring_alert_policy.high_latency[0].name,
-      google_monitoring_alert_policy.database_errors[0].name
-    ] : [],
-    var.use_enterprise && length(var.alert_email_addresses) > 0 ? [
-      google_monitoring_alert_policy.license_errors[0].name
-    ] : []
-  )
-}
+# Outputs moved to outputs.tf for proper Terraform module structure

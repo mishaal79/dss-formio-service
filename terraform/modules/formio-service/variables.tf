@@ -86,6 +86,12 @@ variable "formio_root_email" {
   type        = string
 }
 
+variable "base_url" {
+  description = "Public URL where Form.io will be accessed (e.g., https://forms.dev.cloud.dsselectrical.com.au)"
+  type        = string
+  default     = ""
+}
+
 variable "formio_root_password_secret_id" {
   description = "Secret Manager secret ID for Form.io root admin password"
   type        = string
@@ -104,27 +110,7 @@ variable "formio_db_secret_secret_id" {
   default     = null
 }
 
-# Legacy variables for backward compatibility (deprecated)
-variable "formio_root_password" {
-  description = "DEPRECATED: Use formio_root_password_secret_id instead"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "formio_jwt_secret" {
-  description = "DEPRECATED: Use formio_jwt_secret_secret_id instead"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "formio_db_secret" {
-  description = "DEPRECATED: Use formio_db_secret_secret_id instead"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
+# Legacy variables removed for security - use Secret Manager exclusively
 
 variable "portal_enabled" {
   description = "Whether to enable Form.io portal"
@@ -146,11 +132,7 @@ variable "mongodb_connection_string_secret_id" {
 # Infrastructure Dependencies
 # VPC connector removed - using Direct VPC egress with Cloud NAT for cost optimization
 
-variable "enable_cloud_nat" {
-  description = "Enable Cloud NAT gateway for controlled outbound internet access. Required if services need to access public APIs."
-  type        = bool
-  default     = true # Enable by default for production internet access
-}
+# Removed: enable_cloud_nat - Cloud NAT managed by central infrastructure
 
 # Monitoring and alerting configuration
 variable "alert_email_addresses" {
