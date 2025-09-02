@@ -231,3 +231,34 @@ resource "google_secret_manager_secret_version" "mongodb_formio_password" {
   secret_data_wo         = random_password.mongodb_formio_password.result
   secret_data_wo_version = 3
 }
+
+# =============================================================================
+# FORM.IO LICENSE KEY SECRET
+# Stores the enterprise license key securely
+# =============================================================================
+
+# Form.io License Key Secret
+resource "google_secret_manager_secret" "formio_license" {
+  project   = var.project_id
+  secret_id = "${var.service_name}-license-${var.environment}"
+
+  labels = merge(var.labels, {
+    purpose = "license"
+    service = "formio"
+    type    = "enterprise-license"
+  })
+
+  replication {
+    auto {}
+  }
+
+  # SECURITY: Prevent accidental deletion of critical secrets
+  lifecycle {
+    prevent_destroy = false
+  }
+}
+
+resource "google_secret_manager_secret_version" "formio_license" {
+  secret      = google_secret_manager_secret.formio_license.id
+  secret_data = var.formio_license_key != "" ? var.formio_license_key : "placeholder"
+}

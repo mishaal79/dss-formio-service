@@ -235,3 +235,68 @@ variable "portal_enabled" {
 # Load balancer configuration has been moved to centralized central infrastructure
 # This service now focuses solely on application deployment and exposes backend services
 # for integration with the centralized load balancer
+# =============================================================================
+# PDF SERVER CONFIGURATION
+# =============================================================================
+
+variable "deploy_pdf_server" {
+  description = "Whether to deploy the PDF Plus server for Form.io Enterprise"
+  type        = bool
+  default     = true
+}
+
+variable "pdf_server_image" {
+  description = "Docker image for Form.io PDF Plus server"
+  type        = string
+  default     = "formio/pdf-server:5.11.0-rc.34"
+}
+
+variable "pdf_libs_image" {
+  description = "Docker image for Form.io PDF rendering libraries"
+  type        = string
+  default     = "formio/pdf-libs:2.2.4"
+}
+
+# PDF Server Resource Configuration
+variable "pdf_min_instances" {
+  description = "Minimum number of PDF server instances"
+  type        = number
+  default     = 0
+}
+
+variable "pdf_max_instances" {
+  description = "Maximum number of PDF server instances"
+  type        = number
+  default     = 3
+}
+
+variable "pdf_cpu_request" {
+  description = "CPU request for PDF server instances"
+  type        = string
+  default     = "1000m"
+}
+
+variable "pdf_memory_request" {
+  description = "Memory request for PDF server instances"
+  type        = string
+  default     = "2Gi"
+}
+
+variable "pdf_concurrency" {
+  description = "Maximum concurrent requests per PDF server instance"
+  type        = number
+  default     = 50
+}
+
+variable "pdf_timeout_seconds" {
+  description = "Request timeout for PDF server in seconds"
+  type        = number
+  default     = 300
+}
+
+# Debug Configuration
+variable "debug_mode" {
+  description = "Enable debug mode for PDF server"
+  type        = bool
+  default     = false
+}

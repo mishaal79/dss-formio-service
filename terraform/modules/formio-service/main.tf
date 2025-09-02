@@ -252,6 +252,15 @@ locals {
           }
         }
       }
+    ] : [],
+
+    # Enterprise-only PDF_SERVER configuration
+    var.use_enterprise && var.pdf_server_url != "" ? [
+      {
+        name         = "PDF_SERVER"
+        value        = var.pdf_server_url
+        value_source = null
+      }
     ] : []
   )
 
@@ -455,12 +464,6 @@ resource "google_cloud_run_v2_service" "formio_service" {
         }
       }
 
-      # TODO: Add PDF_SERVER configuration once basic deployment is working
-      # This enables PDF form generation and export functionality
-      # env {
-      #   name  = "PDF_SERVER"
-      #   value = "http://pdf-server:4005"
-      # }
     }
 
     # =============================================================================

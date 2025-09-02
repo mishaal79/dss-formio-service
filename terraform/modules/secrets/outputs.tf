@@ -28,6 +28,11 @@ output "mongodb_formio_password_secret_id" {
   value       = google_secret_manager_secret.mongodb_formio_password.secret_id
 }
 
+output "formio_license_secret_id" {
+  description = "Secret Manager secret ID for Form.io Enterprise license key"
+  value       = google_secret_manager_secret.formio_license.secret_id
+}
+
 # Secret validation outputs (lengths only, for security verification)
 output "secret_validation" {
   description = "Secret validation info (lengths only, for security verification)"

@@ -33,6 +33,22 @@ output "formio_enterprise_admin_url" {
   value       = var.deploy_enterprise && var.portal_enabled && length(module.formio-enterprise) > 0 ? "${module.formio-enterprise[0].service_url}/admin" : null
 }
 
+# PDF Server Outputs
+output "pdf_server_service_url" {
+  description = "URL of the deployed Form.io PDF Plus server"
+  value       = var.deploy_pdf_server && length(module.pdf-server) > 0 ? module.pdf-server[0].service_url : null
+}
+
+output "pdf_server_service_name" {
+  description = "Name of the PDF Plus Cloud Run service"
+  value       = var.deploy_pdf_server && length(module.pdf-server) > 0 ? module.pdf-server[0].service_name : null
+}
+
+output "pdf_server_backend_service_id" {
+  description = "Backend service ID for PDF Plus server (for load balancer integration)"
+  value       = var.deploy_pdf_server && length(module.pdf-server) > 0 ? module.pdf-server[0].backend_service_id : null
+}
+
 # MongoDB Atlas Outputs
 output "mongodb_atlas_cluster_id" {
   description = "MongoDB Atlas cluster ID"

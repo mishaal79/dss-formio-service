@@ -43,10 +43,11 @@ locals {
 module "secrets" {
   source = "../../modules/secrets"
 
-  project_id   = var.project_id
-  environment  = var.environment
-  service_name = var.service_name
-  labels       = local.common_labels
+  project_id         = var.project_id
+  environment        = var.environment
+  service_name       = var.service_name
+  formio_license_key = var.formio_license_key
+  labels             = local.common_labels
 }
 
 # Legacy NAT IP resource removed - now using central infrastructure
@@ -180,8 +181,68 @@ module "formio-enterprise" {
 
   authorized_members = var.authorized_members
 
+  # PDF Server URL for Enterprise PDF generation
+  pdf_server_url = var.deploy_pdf_server ? module.pdf-server[0].service_url : ""
+
   depends_on = [
     module.storage,
     module.mongodb_atlas
+  ]
+}
+
+
+# =============================================================================
+# PDF SERVER DEPLOYMENT
+# =============================================================================
+
+module "pdf-server" {
+  count  = var.deploy_pdf_server ? 1 : 0
+  source = "../../modules/pdf-server"
+
+  project_id  = var.project_id
+  region      = var.region
+  environment = var.environment
+
+  # Network Configuration - using central infrastructure
+  vpc_network          = data.terraform_remote_state.central_infra.outputs.vpc_network_id
+  vpc_connector_subnet = data.terraform_remote_state.central_infra.outputs.egress_subnet_id
+
+  # PDF Server Configuration
+  service_name     = "${var.service_name}-pdf"
+  pdf_server_image = var.pdf_server_image
+  pdf_libs_image   = var.pdf_libs_image
+
+  # License and MongoDB Configuration (shared with Enterprise)
+  formio_license_secret_id     = module.secrets.formio_license_secret_id
+  mongodb_connection_secret_id = module.mongodb_atlas.mongodb_enterprise_connection_string_secret_id
+
+  # Storage Configuration
+  storage_bucket_name = module.storage.bucket_name
+
+  # Resource Configuration
+  min_instances   = var.pdf_min_instances
+  max_instances   = var.pdf_max_instances
+  cpu_request     = var.pdf_cpu_request
+  memory_request  = var.pdf_memory_request
+  concurrency     = var.pdf_concurrency
+  timeout_seconds = var.pdf_timeout_seconds
+
+  # Security Configuration
+  allow_public_access = false
+  authorized_members = concat(
+    var.authorized_members,
+    var.deploy_enterprise ? ["serviceAccount:${module.formio-enterprise[0].service_account_email}"] : []
+  )
+
+  # Labels
+  common_labels = local.common_labels
+
+  # Debug Configuration
+  debug_mode = var.debug_mode
+
+  depends_on = [
+    module.storage,
+    module.mongodb_atlas,
+    module.secrets
   ]
 }

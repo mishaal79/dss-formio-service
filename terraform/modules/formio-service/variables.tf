@@ -92,6 +92,12 @@ variable "base_url" {
   default     = ""
 }
 
+variable "pdf_server_url" {
+  description = "URL of the PDF server for Form.io Enterprise PDF generation"
+  type        = string
+  default     = ""
+}
+
 variable "formio_root_password_secret_id" {
   description = "Secret Manager secret ID for Form.io root admin password"
   type        = string

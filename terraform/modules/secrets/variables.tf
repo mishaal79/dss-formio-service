@@ -32,3 +32,10 @@ variable "labels" {
   type        = map(string)
   default     = {}
 }
+
+variable "formio_license_key" {
+  description = "Form.io Enterprise license key (optional, will create placeholder if not provided)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
