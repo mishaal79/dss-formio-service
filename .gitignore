@@ -292,6 +292,13 @@ local-dev/
 *.tfplan.out
 *.out
 tfplan
+tfplan.out
+
+# HAR files (HTTP Archive - may contain sensitive network data)
+*.har
+
+# Project documentation files that may contain sensitive information
+*_PRD.md
 
 # =============================================================================
 # IMPORTANT SECURITY REMINDERS:
