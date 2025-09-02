@@ -58,6 +58,16 @@ variable "formio_db_secret_secret_id" {
   type        = string
 }
 
+variable "formio_s3_key_secret_id" {
+  description = "Secret Manager secret ID for S3 access key (HMAC)"
+  type        = string
+}
+
+variable "formio_s3_secret_secret_id" {
+  description = "Secret Manager secret ID for S3 secret key (HMAC)"
+  type        = string
+}
+
 variable "formio_server_url" {
   description = "URL of the Form.io server that this PDF server will connect to"
   type        = string

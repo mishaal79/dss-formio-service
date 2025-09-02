@@ -217,6 +217,8 @@ module "pdf-server" {
   mongodb_connection_secret_id = module.mongodb_atlas.mongodb_enterprise_connection_string_secret_id
   formio_jwt_secret_secret_id  = module.secrets.formio_jwt_secret_secret_id
   formio_db_secret_secret_id   = module.secrets.formio_db_secret_secret_id
+  formio_s3_key_secret_id      = "dss-formio-gcs-s3-key-dev"
+  formio_s3_secret_secret_id   = "dss-formio-gcs-s3-secret-dev"
   formio_server_url            = var.deploy_enterprise ? module.formio-enterprise[0].service_url : ""
 
   # Storage Configuration

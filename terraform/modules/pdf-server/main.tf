@@ -167,6 +167,20 @@ resource "google_secret_manager_secret_iam_member" "db_secret_access" {
   member    = "serviceAccount:${google_service_account.pdf_service_account.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "s3_key_access" {
+  project   = var.project_id
+  secret_id = var.formio_s3_key_secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.pdf_service_account.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "s3_secret_access" {
+  project   = var.project_id
+  secret_id = var.formio_s3_secret_secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.pdf_service_account.email}"
+}
+
 # Allow PDF server to access storage bucket
 resource "google_project_iam_member" "storage_access" {
   project = var.project_id
@@ -321,6 +335,14 @@ locals {
       {
         name   = "DB_SECRET"
         secret = var.formio_db_secret_secret_id
+      },
+      {
+        name   = "FORMIO_S3_KEY"
+        secret = var.formio_s3_key_secret_id
+      },
+      {
+        name   = "FORMIO_S3_SECRET"
+        secret = var.formio_s3_secret_secret_id
       }
     ],
     var.formio_license_secret_id != "" ? [
