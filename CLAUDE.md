@@ -182,3 +182,44 @@ export TF_VAR_mongodb_atlas_org_id="your-atlas-org-id"
 - **Override Version**: Provide explicit IMG parameter when needed
 
 **License expires**: 08/29/2025
+
+## Performance Optimizations
+
+### CDN & Cold Start Elimination (Implemented Sept 1, 2025)
+
+**Infrastructure Optimizations Applied:**
+- **Cloud CDN**: Enabled on backend service (`dss-formio-api-ent-backend-dev`)
+  - Cache mode: `CACHE_ALL_STATIC`
+  - Default TTL: 1 hour, Max TTL: 24 hours, Client TTL: 30 minutes
+  - Negative caching: 404s for 5 minutes
+  - Query string whitelist: version, locale
+- **Cold Start Elimination**: Min instances set to 1 (always warm)
+- **Performance Targets**: <300ms first load, <100ms cached responses, >80% CDN hit rate
+
+**Configuration Files:**
+- `terraform/modules/formio-service/main.tf`: Backend service CDN policy
+- `terraform/environments/dev/terraform.tfvars`: min_instances = 1
+
+**Testing CDN Performance:**
+```bash
+# Test cache headers
+curl -I https://forms.dev.cloud.dsselectrical.com.au
+# Look for: X-Cache-Status, Cache-Control headers
+
+# Monitor CDN hit rates
+gcloud monitoring metrics list --filter="metric.type:loadbalancing.googleapis.com/https/backend_request_count"
+```
+
+**Branch**: `feature/issue-30-automated-backend-discovery`
+
+**Load Balancer Integration Required:**
+The backend service with CDN has been created but requires central infrastructure update:
+```bash
+# Add to gcp-dss-erlich-infra-terraform/environments/dev/terraform.tfvars:
+lb_host_rules = {
+  "forms.dev.cloud.dsselectrical.com.au" = {
+    backend_service_id = "projects/erlich-dev/global/backendServices/dss-formio-api-ent-backend-dev"
+  }
+}
+# Then run: terraform apply in central infrastructure project
+```

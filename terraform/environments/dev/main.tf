@@ -179,7 +179,6 @@ module "formio-enterprise" {
   timeout_seconds = var.timeout_seconds
 
   authorized_members = var.authorized_members
-  custom_domains     = var.custom_domains
 
   depends_on = [
     module.storage,

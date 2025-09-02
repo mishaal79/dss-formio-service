@@ -197,17 +197,3 @@ variable "timeout_seconds" {
   default     = 300
 }
 
-# Custom Domain Configuration
-variable "custom_domains" {
-  description = "List of custom domains for whitelabeling (will be activated when DNS is configured)"
-  type        = list(string)
-  default     = []
-
-  validation {
-    condition = alltrue([
-      for domain in var.custom_domains :
-      can(regex("^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\\.[a-zA-Z]{2,}$", domain))
-    ])
-    error_message = "All custom domains must be valid domain names (including subdomains)"
-  }
-}

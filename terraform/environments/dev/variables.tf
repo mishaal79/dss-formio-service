@@ -221,19 +221,6 @@ variable "custom_domain" {
 #   default     = ""
 # }
 
-# Custom Domains for Whitelabeling
-variable "custom_domains" {
-  description = "List of custom domains for Form.io whitelabeling (DNS configured in gcp-dss-erlich-infra-terraform)"
-  type        = list(string)
-  default = [
-    # DNS configured in gcp-dss-erlich-infra-terraform:
-    "forms.dev.cloud.dsselectrical.com.au"
-    # Future domains:
-    # "admin.dev.cloud.dsselectrical.com.au",
-    # "api.dev.cloud.dsselectrical.com.au"
-  ]
-}
-
 # Portal Configuration
 variable "portal_enabled" {
   description = "Enable Form.io developer portal"

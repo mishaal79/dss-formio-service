@@ -349,6 +349,9 @@ resource "google_cloud_run_v2_service" "formio_service" {
   location = var.region
   project  = var.project_id
 
+  # SECURITY: Disable IAM invoker check for load balancer health checks
+  invoker_iam_disabled = true
+
   # SECURITY: Allow internal load balancer traffic for centralized architecture
   ingress = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
 
@@ -501,15 +504,6 @@ resource "google_cloud_run_service_iam_binding" "authorized_access" {
   members = var.authorized_members
 }
 
-# Allow centralized load balancer to access Cloud Run service
-resource "google_cloud_run_service_iam_binding" "load_balancer_access" {
-  location = google_cloud_run_v2_service.formio_service.location
-  project  = google_cloud_run_v2_service.formio_service.project
-  service  = google_cloud_run_v2_service.formio_service.name
-  role     = "roles/run.invoker"
-
-  members = ["allUsers"]
-}
 
 # =============================================================================
 # BACKEND SERVICE AND NETWORK ENDPOINT GROUP FOR CENTRALIZED LOAD BALANCER
@@ -540,8 +534,34 @@ resource "google_compute_backend_service" "formio_backend" {
   protocol              = "HTTP"
   port_name             = "http"
   load_balancing_scheme = "EXTERNAL"
-  timeout_sec           = var.timeout_seconds
-  enable_cdn            = false
+  # timeout_sec is not supported for serverless NEGs (Cloud Run)
+  enable_cdn = true
+
+  # CDN Configuration for performance optimization
+  cdn_policy {
+    cache_mode  = "CACHE_ALL_STATIC"
+    default_ttl = 3600  # 1 hour for API responses
+    max_ttl     = 86400 # 24 hours maximum
+    client_ttl  = 1800  # 30 minutes browser cache
+
+    # Enable negative caching to reduce origin load
+    negative_caching = true
+
+    # Negative caching policy for 404s
+    negative_caching_policy {
+      code = 404
+      ttl  = 300 # Cache 404s for 5 minutes
+    }
+
+    # Intelligent cache key policy
+    cache_key_policy {
+      include_host         = true
+      include_protocol     = true
+      include_query_string = true # Include query string to use whitelist
+      # Only include specific cache-relevant query parameters
+      query_string_whitelist = ["version", "locale"]
+    }
+  }
 
   # Session affinity for Form.io stateful operations
   session_affinity        = "CLIENT_IP"
@@ -549,6 +569,9 @@ resource "google_compute_backend_service" "formio_backend" {
 
   backend {
     group = google_compute_region_network_endpoint_group.formio_neg.id
+
+    # Capacity optimization (max_connections_per_instance not supported for serverless NEGs)
+    max_utilization = 0.8
   }
 
   # Note: Health checks are not supported for serverless NEGs (Cloud Run)

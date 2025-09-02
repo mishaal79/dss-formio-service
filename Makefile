@@ -21,6 +21,13 @@ TF_DIR := terraform/environments/$(ENV)
 SHELL := /bin/bash
 .SHELLFLAGS := -ec
 
+# Google Cloud authentication for Terraform
+export GOOGLE_APPLICATION_CREDENTIALS := $(HOME)/.config/gcloud/keys/dev-mish-key.json
+
+# Load environment variables from .env file if it exists
+-include .env
+export
+
 # =============================================================================
 # DYNAMIC CONFIGURATION FROM TERRAFORM
 # =============================================================================
@@ -91,12 +98,12 @@ help: ## Show this help message
 .PHONY: init
 init: ## Initialize Terraform
 	@echo "--> Initializing Terraform for $(ENV)..."
-	@terraform -chdir=$(TF_DIR) init -input=false -reconfigure
+	@if [ -f .env ]; then source .env && terraform -chdir=$(TF_DIR) init -input=false -reconfigure; else terraform -chdir=$(TF_DIR) init -input=false -reconfigure; fi
 
 .PHONY: plan
 plan: init check ## Plan infrastructure changes
 	@echo "--> Generating plan for $(ENV)..."
-	@terraform -chdir=$(TF_DIR) plan -out=tfplan.out -input=false
+	@if [ -f .env ]; then source .env && terraform -chdir=$(TF_DIR) plan -out=tfplan.out -input=false; else terraform -chdir=$(TF_DIR) plan -out=tfplan.out -input=false; fi
 
 .PHONY: apply
 apply: init validate-env ## Apply infrastructure changes
@@ -105,7 +112,7 @@ apply: init validate-env ## Apply infrastructure changes
 		echo "Error: No plan file found. Run 'make plan' first."; \
 		exit 1; \
 	fi
-	@terraform -chdir=$(TF_DIR) apply -auto-approve tfplan.out
+	@if [ -f .env ]; then source .env && terraform -chdir=$(TF_DIR) apply -auto-approve tfplan.out; else terraform -chdir=$(TF_DIR) apply -auto-approve tfplan.out; fi
 	@echo "✅ Infrastructure updated. Configuration available for Makefile commands."
 
 .PHONY: destroy
