@@ -219,7 +219,7 @@ module "pdf-server" {
   formio_db_secret_secret_id   = module.secrets.formio_db_secret_secret_id
   formio_s3_key_secret_id      = "dss-formio-gcs-s3-key-dev"
   formio_s3_secret_secret_id   = "dss-formio-gcs-s3-secret-dev"
-  formio_server_url            = var.deploy_enterprise ? module.formio-enterprise[0].service_url : ""
+  formio_server_url            = "" # Removed to break circular dependency
 
   # Storage Configuration
   storage_bucket_name = module.storage.bucket_name

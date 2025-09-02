@@ -259,16 +259,17 @@ resource "google_cloud_run_service_iam_binding" "public_access" {
   members  = ["allUsers"]
 }
 
-resource "google_cloud_run_service_iam_binding" "authorized_access" {
-  count    = var.allow_public_access ? 0 : 1
+resource "google_cloud_run_service_iam_member" "authorized_access" {
+  for_each = var.allow_public_access ? toset([]) : toset(distinct(concat(
+    ["serviceAccount:${google_service_account.pdf_service_account.email}"],
+    var.authorized_members
+  )))
+
   location = google_cloud_run_v2_service.pdf_service.location
   project  = google_cloud_run_v2_service.pdf_service.project
   service  = google_cloud_run_v2_service.pdf_service.name
   role     = "roles/run.invoker"
-  members = concat(
-    ["serviceAccount:${google_service_account.pdf_service_account.email}"],
-    var.authorized_members
-  )
+  member   = each.value
 }
 
 # =============================================================================
