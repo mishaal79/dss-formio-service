@@ -153,6 +153,20 @@ resource "google_secret_manager_secret_iam_member" "mongodb_connection_access" {
   member    = "serviceAccount:${google_service_account.pdf_service_account.email}"
 }
 
+resource "google_secret_manager_secret_iam_member" "jwt_secret_access" {
+  project   = var.project_id
+  secret_id = var.formio_jwt_secret_secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.pdf_service_account.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "db_secret_access" {
+  project   = var.project_id
+  secret_id = var.formio_db_secret_secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.pdf_service_account.email}"
+}
+
 # Allow PDF server to access storage bucket
 resource "google_project_iam_member" "storage_access" {
   project = var.project_id
@@ -286,6 +300,10 @@ locals {
     {
       name  = "NODE_OPTIONS"
       value = "--max-old-space-size=2048"
+    },
+    {
+      name  = "FORMIO_SERVER"
+      value = var.formio_server_url != "" ? var.formio_server_url : "http://localhost:3000"
     }
   ]
 
@@ -295,6 +313,14 @@ locals {
       {
         name   = "MONGO"
         secret = var.mongodb_connection_secret_id
+      },
+      {
+        name   = "JWT_SECRET"
+        secret = var.formio_jwt_secret_secret_id
+      },
+      {
+        name   = "DB_SECRET"
+        secret = var.formio_db_secret_secret_id
       }
     ],
     var.formio_license_secret_id != "" ? [

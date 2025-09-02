@@ -48,6 +48,22 @@ variable "mongodb_connection_secret_id" {
   type        = string
 }
 
+variable "formio_jwt_secret_secret_id" {
+  description = "Secret Manager secret ID for JWT secret"
+  type        = string
+}
+
+variable "formio_db_secret_secret_id" {
+  description = "Secret Manager secret ID for database encryption secret"
+  type        = string
+}
+
+variable "formio_server_url" {
+  description = "URL of the Form.io server that this PDF server will connect to"
+  type        = string
+  default     = ""
+}
+
 # Storage Configuration
 variable "storage_bucket_name" {
   description = "Name of the GCS bucket for PDF storage"

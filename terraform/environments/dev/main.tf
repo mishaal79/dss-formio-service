@@ -215,6 +215,9 @@ module "pdf-server" {
   # License and MongoDB Configuration (shared with Enterprise)
   formio_license_secret_id     = module.secrets.formio_license_secret_id
   mongodb_connection_secret_id = module.mongodb_atlas.mongodb_enterprise_connection_string_secret_id
+  formio_jwt_secret_secret_id  = module.secrets.formio_jwt_secret_secret_id
+  formio_db_secret_secret_id   = module.secrets.formio_db_secret_secret_id
+  formio_server_url            = var.deploy_enterprise ? module.formio-enterprise[0].service_url : ""
 
   # Storage Configuration
   storage_bucket_name = module.storage.bucket_name
