@@ -233,7 +233,7 @@ module "pdf-server" {
   timeout_seconds = var.pdf_timeout_seconds
 
   # Security Configuration
-  allow_public_access = false
+  allow_public_access = true
   authorized_members = concat(
     var.authorized_members,
     var.deploy_enterprise ? ["serviceAccount:${module.formio-enterprise[0].service_account_email}"] : []
