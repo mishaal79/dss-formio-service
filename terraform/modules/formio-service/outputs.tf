@@ -51,6 +51,17 @@ output "license_key_secret_id" {
   value       = var.use_enterprise ? google_secret_manager_secret.formio_license_key[0].secret_id : null
 }
 
+# S3-Compatible Storage Secrets
+output "s3_key_secret_id" {
+  description = "Secret Manager secret ID for S3-compatible access key"
+  value       = google_secret_manager_secret.formio_s3_key.secret_id
+}
+
+output "s3_secret_secret_id" {
+  description = "Secret Manager secret ID for S3-compatible secret key"
+  value       = google_secret_manager_secret.formio_s3_secret.secret_id
+}
+
 # Configuration Information
 output "edition" {
   description = "Form.io edition (enterprise or community)"
