@@ -302,7 +302,7 @@ locals {
     },
     {
       name  = "FORMIO_S3_SERVER"
-      value = "storage.googleapis.com"
+      value = "https://storage.googleapis.com"
     },
     {
       name  = "FORMIO_S3_BUCKET"
@@ -311,6 +311,10 @@ locals {
     {
       name  = "FORMIO_S3_PATH"
       value = "pdf/${var.environment}/uploads"
+    },
+    {
+      name  = "FORMIO_S3_REGION"
+      value = "auto"
     },
     {
       name  = "NODE_OPTIONS"
