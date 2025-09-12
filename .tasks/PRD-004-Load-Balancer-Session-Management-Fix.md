@@ -1,6 +1,6 @@
 # PRD-004: Fix Session Expiry - Load Balancer Affinity Mismatch
 
-**Status:** Implementation Required  
+**Status:** ✅ COMPLETED (2025-09-12)  
 **Issue:** Users kicked out after 1 hour  
 **Root Cause:** Session affinity TTL (1hr) < JWT token lifetime (4hrs)  
 
@@ -61,6 +61,25 @@ env {
 - **Verify** `GENERATED_COOKIE` session affinity is supported
 - **Health checks** not supported for Cloud Run NEGs (automatic)
 - **CDN must stay enabled** for form loading performance
+
+---
+
+## IMPLEMENTATION DETAILS
+
+**Completed:** 2025-09-12
+**Commit:** 3cc7755
+
+### Changes Applied:
+1. ✅ Backend service session affinity changed from CLIENT_IP to GENERATED_COOKIE
+2. ✅ Cookie TTL set to 14400 seconds (4 hours)
+3. ✅ JWT_EXPIRE_TIME environment variable added (240 minutes)
+4. ✅ Removed unsupported timeout_sec from serverless NEG backend services
+5. ✅ CDN remains enabled for static asset caching
+
+### Deployment:
+- Infrastructure updated via Terraform apply
+- Service redeployed with new configuration
+- No central load balancer changes required (in-place update)
 
 ---
 
