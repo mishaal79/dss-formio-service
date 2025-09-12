@@ -253,14 +253,22 @@ This architecture uses deliberate tfvars configuration rather than automatic rem
 
 Form.io file uploads are configured to use Google Cloud Storage via S3-compatible API. The infrastructure is automatically provisioned by Terraform, but the Form.io portal requires manual configuration.
 
+#### Critical Configuration Requirement
+
+⚠️ **IMPORTANT**: You MUST enable "Use MinIO Server" in the Form.io portal for GCS S3-compatible storage to work correctly. This is a PORTAL configuration, NOT a server environment variable configuration.
+
 #### Portal Configuration Steps
 
 1. **Navigate to Form.io Portal**
    - Go to your project settings
-   - Select "File Storage" or "Storage" section
-   - Choose "S3" as the storage provider
+   - Select "Settings" → "Integrations" → "File Storage"
+   - Select the "S3" tab
 
-2. **Retrieve Credentials from Secret Manager**
+2. **Enable MinIO Mode (CRITICAL)**
+   - ✅ **CHECK "Use MinIO Server"** - This enables S3-compatible storage for non-AWS providers
+   - This changes URL generation from AWS virtual-hosted-style to path-style URLs
+
+3. **Retrieve Credentials from Secret Manager**
    ```bash
    # Get Access Key ID
    gcloud secrets versions access latest \
@@ -273,25 +281,71 @@ Form.io file uploads are configured to use Google Cloud Storage via S3-compatibl
      --project=erlich-dev
    ```
 
-3. **Enter Configuration Values**
+4. **Enter Configuration Values**
+   - **MinIO Server URL**: `https://storage.googleapis.com`
    - **Access Key ID**: (Retrieved from Secret Manager)
    - **Secret Access Key**: (Retrieved from Secret Manager)
    - **Bucket Name**: `erlich-dev-formio-storage-dev-g004azjs`
-   - **Bucket URL**: `https://storage.googleapis.com` (NOT the auto-filled AWS URL)
-   - **Bucket Region**: `auto` (per Google Cloud documentation)
-   - **Folder Name**: `ent/dev/uploads/`
+   - **Bucket Region**: Leave empty or use `auto`
+   - **Starts With (Folder)**: `ent/dev/uploads/` (for Enterprise) or `pdf/dev/uploads/` (for PDF server)
 
-4. **Optional Settings**
+5. **Optional Settings**
    - **Access Control List**: `private` (recommended) or `public-read`
    - **Max File Size**: `104857600` (100MB in bytes)
    - **Policy Expiration**: `3600` (1 hour in seconds)
+   - **Enable S3 Multipart**: Yes (for large file uploads)
+
+#### How It Works
+
+When "Use MinIO Server" is enabled:
+- Server responds with `"minio":true` in storage requests
+- Generates path-style URLs: `https://storage.googleapis.com/bucket/path`
+- Compatible with GCS S3-compatible API
+
+When NOT enabled (default):
+- Server responds with `"minio":false`
+- Generates AWS virtual-hosted-style URLs: `bucket.s3.region.amazonaws.com`
+- Does NOT work with GCS
+
+#### Common Mistakes to Avoid
+
+❌ **DO NOT add these environment variables** (they are incorrect and not in documentation):
+- `FORMIO_S3_ENDPOINT` - This is NOT a valid Form.io environment variable
+- `FORMIO_S3_FORCE_PATH_STYLE` - This is NOT a valid Form.io environment variable
+
+❌ **DO NOT change** `FORMIO_S3_REGION` from `auto` to actual GCS region like `australia-southeast1`
+- Google Cloud documentation specifies using `auto` for S3-compatible API
+
+❌ **DO NOT forget** to check "Use MinIO Server" in portal
+- Without this, Form.io will generate AWS-style URLs that don't work with GCS
+
+#### Troubleshooting
+
+1. **Verify MinIO Mode is Enabled**
+   ```bash
+   # Test the storage endpoint
+   curl 'https://your-formio-service.run.app/project/YOUR_PROJECT_ID/form/YOUR_FORM_ID/storage/s3' \
+     -H 'x-jwt-token: YOUR_JWT_TOKEN' \
+     --data-raw '{"name":"test.txt","size":100,"type":"text/plain"}'
+   ```
+   
+   Look for `"minio":true` in the response. If it shows `"minio":false`, the MinIO mode is not enabled in portal.
+
+2. **Check Presigned URL Format**
+   - ✅ Correct (MinIO mode): `https://storage.googleapis.com/bucket-name/path/to/file?...`
+   - ❌ Wrong (AWS mode): `https://bucket-name.s3.auto.amazonaws.com/path/to/file?...`
+
+3. **Server Environment Variables** (already configured by Terraform)
+   - `FORMIO_S3_SERVER=https://storage.googleapis.com`
+   - `FORMIO_S3_BUCKET=bucket-name`
+   - `FORMIO_S3_REGION=auto`
+   - `FORMIO_S3_KEY` and `FORMIO_S3_SECRET` from Secret Manager
 
 #### Important Notes
 
-- **DO NOT** use the auto-filled AWS S3 URL (`https://bucket.s3.amazonaws.com`)
-- The bucket URL must be `https://storage.googleapis.com` for GCS S3-compatibility
-- Region must be `auto` as documented in [Google Cloud S3 migration guide](https://cloud.google.com/storage/docs/aws-simple-migration)
+- The solution is primarily in the PORTAL configuration, not server environment variables
 - Credentials are stored in Google Secret Manager and should never be committed to code
+- Region must be `auto` as documented in [Google Cloud S3 migration guide](https://cloud.google.com/storage/docs/aws-simple-migration)
 
 ## Configuration Management
 
