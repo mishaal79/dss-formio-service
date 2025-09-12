@@ -29,6 +29,13 @@ timeout_seconds = 300
 # Storage Configuration
 formio_bucket_name = "" # Auto-generated
 
+# S3-Compatible Storage Configuration (Optional Portal Defaults)
+# These values can be configured in the Form.io portal UI
+# They provide server-wide defaults that can be overridden per-component
+formio_s3_acl               = "private"      # Access Control List: "private" or "public-read"
+formio_s3_max_size          = "104857600"    # Max file size in bytes (100MB)
+formio_s3_policy_expiration = "3600"         # Policy expiration in seconds (1 hour)
+
 # MongoDB Atlas Configuration
 mongodb_atlas_enabled = true
 mongodb_version       = "7.0"

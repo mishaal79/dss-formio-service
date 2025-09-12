@@ -155,20 +155,51 @@ locals {
           }
         }
       },
+      # S3-compatible storage configuration for file uploads
       {
         name         = "FORMIO_FILES_SERVER"
-        value        = "gcs"
+        value        = "s3"
         value_source = null
       },
       {
-        name         = "FORMIO_GCS_BUCKET"
+        name         = "FORMIO_S3_SERVER"
+        value        = "storage.googleapis.com"
+        value_source = null
+      },
+      {
+        name         = "FORMIO_S3_BUCKET"
         value        = var.storage_bucket_name
         value_source = null
       },
       {
-        name         = "FORMIO_GCS_PATH"
+        name         = "FORMIO_S3_REGION"
+        value        = "auto"
+        value_source = null
+      },
+      {
+        name         = "FORMIO_S3_PATH"
         value        = "${var.use_enterprise ? "ent" : "com"}/${var.environment}/uploads"
         value_source = null
+      },
+      {
+        name  = "FORMIO_S3_KEY"
+        value = null
+        value_source = {
+          secret_key_ref = {
+            secret  = google_secret_manager_secret.formio_s3_key.secret_id
+            version = "latest"
+          }
+        }
+      },
+      {
+        name  = "FORMIO_S3_SECRET"
+        value = null
+        value_source = {
+          secret_key_ref = {
+            secret  = google_secret_manager_secret.formio_s3_secret.secret_id
+            version = "latest"
+          }
+        }
       },
       {
         name         = "NODE_OPTIONS"
@@ -236,6 +267,11 @@ locals {
         value        = "true"
         value_source = null
       },
+      {
+        name         = "JWT_EXPIRE_TIME"
+        value        = "240"
+        value_source = null
+      },
       # Cloud Run automatically injects PORT environment variable
       # Form.io will listen on $PORT (managed by Cloud Run)
     ],
@@ -276,6 +312,65 @@ resource "google_service_account" "formio_service_account" {
   account_id   = "${var.service_name}-sa-${var.environment}"
   display_name = "Form.io ${var.use_enterprise ? "Enterprise" : "Community"} Service Account"
   project      = var.project_id
+}
+
+# =============================================================================
+# HMAC KEYS FOR S3-COMPATIBLE GCS ACCESS (FILE UPLOADS)
+# =============================================================================
+
+# Generate HMAC key for S3-compatible access to GCS
+resource "google_storage_hmac_key" "formio_gcs_key" {
+  service_account_email = google_service_account.formio_service_account.email
+  project               = var.project_id
+}
+
+# Store HMAC access key in Secret Manager
+resource "google_secret_manager_secret" "formio_s3_key" {
+  secret_id = "${var.service_name}-gcs-s3-key-${var.environment}"
+  project   = var.project_id
+
+  replication {
+    auto {}
+  }
+
+  labels = local.service_labels
+}
+
+resource "google_secret_manager_secret_version" "formio_s3_key" {
+  secret      = google_secret_manager_secret.formio_s3_key.id
+  secret_data = google_storage_hmac_key.formio_gcs_key.access_id
+}
+
+# Store HMAC secret key in Secret Manager
+resource "google_secret_manager_secret" "formio_s3_secret" {
+  secret_id = "${var.service_name}-gcs-s3-secret-${var.environment}"
+  project   = var.project_id
+
+  replication {
+    auto {}
+  }
+
+  labels = local.service_labels
+}
+
+resource "google_secret_manager_secret_version" "formio_s3_secret" {
+  secret      = google_secret_manager_secret.formio_s3_secret.id
+  secret_data = google_storage_hmac_key.formio_gcs_key.secret
+}
+
+# Grant service account access to the HMAC key secrets
+resource "google_secret_manager_secret_iam_member" "s3_key_access" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.formio_s3_key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.formio_service_account.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "s3_secret_access" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.formio_s3_secret.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.formio_service_account.email}"
 }
 
 # IAM bindings for service account to access secrets
@@ -537,38 +632,31 @@ resource "google_compute_backend_service" "formio_backend" {
   protocol              = "HTTP"
   port_name             = "http"
   load_balancing_scheme = "EXTERNAL"
-  # timeout_sec is not supported for serverless NEGs (Cloud Run)
-  enable_cdn = true
+  enable_cdn            = true
 
-  # CDN Configuration for performance optimization
   cdn_policy {
     cache_mode  = "CACHE_ALL_STATIC"
-    default_ttl = 3600  # 1 hour for API responses
-    max_ttl     = 86400 # 24 hours maximum
-    client_ttl  = 1800  # 30 minutes browser cache
+    default_ttl = 3600
+    max_ttl     = 86400
+    client_ttl  = 1800
 
-    # Enable negative caching to reduce origin load
     negative_caching = true
 
-    # Negative caching policy for 404s
     negative_caching_policy {
       code = 404
-      ttl  = 300 # Cache 404s for 5 minutes
+      ttl  = 300
     }
 
-    # Intelligent cache key policy
     cache_key_policy {
-      include_host         = true
-      include_protocol     = true
-      include_query_string = true # Include query string to use whitelist
-      # Only include specific cache-relevant query parameters
+      include_host           = true
+      include_protocol       = true
+      include_query_string   = true
       query_string_whitelist = ["version", "locale"]
     }
   }
 
-  # Session affinity for Form.io stateful operations
-  session_affinity        = "CLIENT_IP"
-  affinity_cookie_ttl_sec = 3600 # 1 hour
+  session_affinity        = "GENERATED_COOKIE"
+  affinity_cookie_ttl_sec = 14400
 
   backend {
     group = google_compute_region_network_endpoint_group.formio_neg.id

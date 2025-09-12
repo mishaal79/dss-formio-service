@@ -247,6 +247,52 @@ This architecture uses deliberate tfvars configuration rather than automatic rem
 - **Network Security**: Private VPC with controlled egress
 - **Compliance**: PCI-DSS scope considerations
 
+## Form.io Portal File Storage Configuration
+
+### S3-Compatible Storage (GCS)
+
+Form.io file uploads are configured to use Google Cloud Storage via S3-compatible API. The infrastructure is automatically provisioned by Terraform, but the Form.io portal requires manual configuration.
+
+#### Portal Configuration Steps
+
+1. **Navigate to Form.io Portal**
+   - Go to your project settings
+   - Select "File Storage" or "Storage" section
+   - Choose "S3" as the storage provider
+
+2. **Retrieve Credentials from Secret Manager**
+   ```bash
+   # Get Access Key ID
+   gcloud secrets versions access latest \
+     --secret="dss-formio-api-ent-gcs-s3-key-dev" \
+     --project=erlich-dev
+
+   # Get Secret Access Key
+   gcloud secrets versions access latest \
+     --secret="dss-formio-api-ent-gcs-s3-secret-dev" \
+     --project=erlich-dev
+   ```
+
+3. **Enter Configuration Values**
+   - **Access Key ID**: (Retrieved from Secret Manager)
+   - **Secret Access Key**: (Retrieved from Secret Manager)
+   - **Bucket Name**: `erlich-dev-formio-storage-dev-g004azjs`
+   - **Bucket URL**: `https://storage.googleapis.com` (NOT the auto-filled AWS URL)
+   - **Bucket Region**: `auto` (per Google Cloud documentation)
+   - **Folder Name**: `ent/dev/uploads/`
+
+4. **Optional Settings**
+   - **Access Control List**: `private` (recommended) or `public-read`
+   - **Max File Size**: `104857600` (100MB in bytes)
+   - **Policy Expiration**: `3600` (1 hour in seconds)
+
+#### Important Notes
+
+- **DO NOT** use the auto-filled AWS S3 URL (`https://bucket.s3.amazonaws.com`)
+- The bucket URL must be `https://storage.googleapis.com` for GCS S3-compatibility
+- Region must be `auto` as documented in [Google Cloud S3 migration guide](https://cloud.google.com/storage/docs/aws-simple-migration)
+- Credentials are stored in Google Secret Manager and should never be committed to code
+
 ## Configuration Management
 
 ### Single Source of Truth
