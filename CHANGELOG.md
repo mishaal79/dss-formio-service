@@ -5,7 +5,40 @@ All notable changes to the DSS Form.io Service will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2025-09-12
+## [1.1.0] - 2025-01-15
+
+### Added
+- **GCS S3-Compatible Configuration Guide**: Comprehensive standalone documentation for Form.io support representatives
+  - Complete GCS bucket setup instructions with CORS configuration
+  - Server environment variable configuration reference
+  - Critical portal configuration steps for enabling MinIO mode
+  - Form component configuration guidelines
+  - Troubleshooting steps and common mistake prevention
+  - Technical details about URL generation differences
+
+### Documentation
+- **Repository Cleanup**: Removed outdated and redundant documentation files
+  - Removed completed PRD documents (1_PRD.md)
+  - Removed superseded PDF server docs (PDF_SERVER_DEPLOYMENT.md, PDF_SERVER_ROUTING_FIX.md)
+  - Removed duplicate architecture documentation (terraform/ARCHITECTURE.md)
+  - Removed outdated Google integration setup guide (docs/google-integration-setup.md)
+  - Removed legacy task documents (.tasks/ directory)
+  - Cleaned up empty documentation directories
+
+### Changed
+- **Documentation Structure**: Streamlined documentation for better maintainability
+  - Consolidated critical information in main README.md
+  - Created focused GCS configuration guide for external sharing
+  - All documentation references updated to current structure
+
+### Technical Implementation
+- **GCS S3-Compatible Storage**: Successfully implemented file upload functionality
+  - Portal configuration: "Use MinIO Server" checkbox enables path-style URLs
+  - Server configuration: All environment variables properly set via Terraform
+  - Response validation: Server returns `"minio": true` for correct URL generation
+  - S3 Multipart uploads working for large files
+
+## [1.0.0] - 2025-01-12
 
 ### Added
 - **PRD-003**: S3-compatible file upload functionality using GCS backend
@@ -65,5 +98,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.1.0]: https://github.com/dss/dss-formio-service/releases/tag/v1.1.0
 [1.0.0]: https://github.com/dss/dss-formio-service/releases/tag/v1.0.0
 [0.9.0]: https://github.com/dss/dss-formio-service/releases/tag/v0.9.0
