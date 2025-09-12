@@ -163,7 +163,7 @@ locals {
       },
       {
         name         = "FORMIO_S3_SERVER"
-        value        = "storage.googleapis.com"
+        value        = "https://storage.googleapis.com"
         value_source = null
       },
       {
