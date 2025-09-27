@@ -1,0 +1,96 @@
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: formio-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-formio}
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/mongodb:/data/db
+      - ./config/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - formio-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  formio:
+    image: formio/formio:rc
+    container_name: formio-community
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    environment:
+      # Core Form.io Configuration
+      NODE_CONFIG: |
+        {
+          "mongo": "mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DATABASE:-formio}?authSource=admin",
+          "port": 3001,
+          "host": "0.0.0.0",
+          "protocol": "http",
+          "jwt": {
+            "secret": "${JWT_SECRET:-your-jwt-secret-change-me-now}",
+            "expireTime": 240
+          },
+          "db": {
+            "secret": "${DB_SECRET:-your-db-secret-change-me-now}"
+          },
+          "email": {
+            "type": "sendgrid",
+            "settings": {
+              "auth": {
+                "api_key": "${SENDGRID_API_KEY:-}"
+              }
+            }
+          }
+        }
+
+      # Admin Credentials
+      ROOT_EMAIL: ${ROOT_EMAIL:-admin@example.com}
+      ROOT_PASSWORD: ${ROOT_PASSWORD:-changeme123}
+
+      # Debug Settings
+      DEBUG: ${DEBUG:-formio:*}
+
+      # File Storage Configuration (S3-compatible for GCS)
+      FORMIO_FILES_SERVER: ${FORMIO_FILES_SERVER:-s3}
+      FORMIO_S3_SERVER: ${FORMIO_S3_SERVER:-https://storage.googleapis.com}
+      FORMIO_S3_BUCKET: ${FORMIO_S3_BUCKET:-placeholder-bucket}
+      FORMIO_S3_REGION: ${FORMIO_S3_REGION:-auto}
+      FORMIO_S3_KEY: ${FORMIO_S3_KEY:-}
+      FORMIO_S3_SECRET: ${FORMIO_S3_SECRET:-}
+
+      # Additional Configuration
+      NODE_ENV: ${NODE_ENV:-development}
+      FORMIO_DOMAIN: ${FORMIO_DOMAIN:-http://localhost:3001}
+
+      # Trust proxy for future load balancer integration
+      FORMIO_TRUST_PROXY: ${FORMIO_TRUST_PROXY:-true}
+
+    networks:
+      - formio-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  formio-network:
+    driver: bridge
+    name: formio-network
+
+volumes:
+  mongodb-data:
+    driver: local

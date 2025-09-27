@@ -56,6 +56,9 @@ IMG_COM_CONFIGURED := $(call tf_output,community_image_configured,formio/formio:
 IMG_ENT_DEPLOYED := $(call tf_output,enterprise_image_deployed,)
 IMG_COM_DEPLOYED := $(call tf_output,community_image_deployed,)
 
+# Community Standalone Service (New)
+SERVICE_COMMUNITY_STANDALONE := $(call tf_output,formio_community_standalone_service_name,formio-community-dev)
+
 # Default images for deployment (use configured unless overridden)
 IMG_ENT ?= $(IMG_ENT_CONFIGURED)
 IMG_COM ?= $(IMG_COM_CONFIGURED)
