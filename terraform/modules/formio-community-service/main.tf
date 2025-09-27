@@ -25,20 +25,9 @@ data "google_secret_manager_secret_version" "formio_db_secret" {
 }
 
 locals {
-  # Community Edition NODE_CONFIG - uses JSON configuration pattern
-  community_node_config = jsonencode({
-    mongo    = data.google_secret_manager_secret_version.mongodb_connection_string.secret_data
-    port     = 3001 # Community standard port (NOT 3000)
-    host     = "0.0.0.0"
-    protocol = "http"
-    jwt = {
-      secret = data.google_secret_manager_secret_version.formio_jwt_secret.secret_data
-    }
-    db = {
-      secret = data.google_secret_manager_secret_version.formio_db_secret.secret_data
-    }
-    trust_proxy = true # Required for load balancer integration
-  })
+  # SECURITY: NODE_CONFIG is now assembled at runtime in the container
+  # This prevents secrets from appearing in Terraform state files
+  # The wrapper script uses jq to build NODE_CONFIG from environment variables
 
   # Service naming - completely independent from Enterprise
   service_name_full = "formio-community-${var.environment}"
@@ -72,11 +61,56 @@ locals {
   container_port = 3001
 
   # Environment variables for Community Edition
+  # SECURITY: Secrets are now passed as references, not values
+  # The wrapper script assembles NODE_CONFIG at runtime
   env_vars = [
-    # Community Edition uses NODE_CONFIG for configuration
+    # MongoDB connection string from Secret Manager
     {
-      name         = "NODE_CONFIG"
-      value        = local.community_node_config
+      name  = "MONGO_URI"
+      value = null
+      value_source = {
+        secret_key_ref = {
+          secret  = var.mongodb_connection_string_secret_id
+          version = "latest"
+        }
+      }
+    },
+    # JWT secret from Secret Manager
+    {
+      name  = "JWT_SECRET"
+      value = null
+      value_source = {
+        secret_key_ref = {
+          secret  = var.formio_jwt_secret_secret_id
+          version = "latest"
+        }
+      }
+    },
+    # DB secret from Secret Manager
+    {
+      name  = "DB_SECRET"
+      value = null
+      value_source = {
+        secret_key_ref = {
+          secret  = var.formio_db_secret_secret_id
+          version = "latest"
+        }
+      }
+    },
+    # Protocol and host configuration
+    {
+      name         = "PROTOCOL"
+      value        = "http"
+      value_source = null
+    },
+    {
+      name         = "HOST"
+      value        = "0.0.0.0"
+      value_source = null
+    },
+    {
+      name         = "PORT"
+      value        = "3001"
       value_source = null
     },
     # Common environment variables
@@ -384,6 +418,33 @@ resource "google_cloud_run_v2_service" "formio_community_service" {
     containers {
       name  = "formio-community"
       image = "formio/formio:${var.community_version}"
+
+      # Override entrypoint to use wrapper script for secure NODE_CONFIG assembly
+      # This prevents secrets from appearing in Terraform state files
+      command = ["/bin/sh"]
+      args = [
+        "-c",
+        <<-EOT
+        # Install jq for JSON assembly
+        apk add --no-cache jq || apt-get update && apt-get install -y jq
+
+        # Assemble NODE_CONFIG from environment variables
+        export NODE_CONFIG=$(jq -n \
+          --arg mongo "$MONGO_URI" \
+          --arg jwt "$JWT_SECRET" \
+          --arg db "$DB_SECRET" \
+          --arg host "$${HOST:-0.0.0.0}" \
+          --arg protocol "$${PROTOCOL:-http}" \
+          --argjson port $${PORT:-3001} \
+          --argjson trust $${TRUST_PROXY:-true} \
+          '{mongo: $mongo, port: $port, host: $host, protocol: $protocol, jwt: {secret: $jwt}, db: {secret: $db}, trust_proxy: $trust}')
+
+        echo "[$(date)] NODE_CONFIG assembled successfully"
+
+        # Start Form.io
+        exec node main.js
+        EOT
+      ]
 
       ports {
         name           = "http1" # Force HTTP/1.1 protocol
