@@ -264,6 +264,57 @@ output "backend_service_configuration" {
 }
 
 # =============================================================================
+# FORM.IO COMMUNITY EDITION OUTPUTS (STANDALONE)
+# =============================================================================
+
+output "formio_community_standalone_service_url" {
+  description = "URL of the deployed Form.io Community standalone service"
+  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_url : null
+}
+
+output "formio_community_standalone_service_name" {
+  description = "Name of the Community standalone Cloud Run service"
+  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_name : null
+}
+
+output "formio_community_standalone_backend_service_id" {
+  description = "Backend service ID for Community standalone (for load balancer integration)"
+  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].backend_service_id : null
+}
+
+output "formio_community_standalone_backend_service_name" {
+  description = "Backend service name for Community standalone"
+  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].backend_service_name : null
+}
+
+output "formio_community_standalone_deployment_status" {
+  description = "Community standalone deployment status and configuration"
+  value = var.deploy_community && length(module.formio-community) > 0 ? {
+    deployed     = true
+    service_url  = module.formio-community[0].service_url
+    backend_id   = module.formio-community[0].backend_service_id
+    port         = 3001
+    database     = "formio_community"
+    storage_path = "com/${var.environment}/uploads/"
+    } : {
+    deployed = false
+  }
+}
+
+# Load Balancer Integration Instructions for Community Standalone
+output "community_standalone_lb_integration" {
+  description = "Instructions for integrating Community standalone with central load balancer"
+  value = var.deploy_community && length(module.formio-community) > 0 ? {
+    instructions = "Add to central infrastructure tfvars:"
+    lb_host_rules = {
+      "forms-community.${var.environment}.cloud.dsselectrical.com.au" = {
+        backend_service_id = module.formio-community[0].backend_service_id
+      }
+    }
+  } : null
+}
+
+# =============================================================================
 # MAKEFILE CONFIGURATION OUTPUTS
 # =============================================================================
 # These outputs provide all configuration needed by the Makefile,

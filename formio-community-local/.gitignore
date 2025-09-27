@@ -1,0 +1,7 @@
+# Local development files
+.env
+data/
+*.log
+*.pid
+node_modules/
+.DS_Store

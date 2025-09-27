@@ -98,7 +98,7 @@ module "mongodb_atlas" {
 
 module "formio-community" {
   count  = var.deploy_community ? 1 : 0
-  source = "../../modules/formio-service"
+  source = "../../modules/formio-community-service" # Use new standalone module
 
   project_id  = var.project_id
   region      = var.region
@@ -109,23 +109,20 @@ module "formio-community" {
   vpc_network_id   = data.terraform_remote_state.central_infra.outputs.vpc_network_id
   egress_subnet_id = data.terraform_remote_state.central_infra.outputs.egress_subnet_id
 
-  use_enterprise    = false
-  formio_version    = var.formio_version
+  # Community Edition Configuration
   community_version = var.community_version
-  service_name      = "${var.service_name}-com"
   formio_root_email = var.formio_root_email
 
-  formio_root_password_secret_id = module.secrets.formio_root_password_secret_id
-  formio_jwt_secret_secret_id    = module.secrets.formio_jwt_secret_secret_id
-  formio_db_secret_secret_id     = module.secrets.formio_db_secret_secret_id
-
-  portal_enabled = var.portal_enabled
-
-  database_name                       = local.mongodb_community_db_name
+  # Secret Manager Integration - Community uses separate connection string
   mongodb_connection_string_secret_id = module.mongodb_atlas.mongodb_community_connection_string_secret_id
+  formio_jwt_secret_secret_id         = module.secrets.formio_jwt_secret_secret_id
+  formio_db_secret_secret_id          = module.secrets.formio_db_secret_secret_id
+  formio_root_password_secret_id      = module.secrets.formio_root_password_secret_id
 
+  # Storage Configuration
   storage_bucket_name = module.storage.bucket_name
 
+  # Resource Configuration
   max_instances   = var.max_instances
   min_instances   = var.min_instances
   cpu_request     = var.cpu_request
@@ -133,11 +130,13 @@ module "formio-community" {
   concurrency     = var.concurrency
   timeout_seconds = var.timeout_seconds
 
+  # Security Configuration
   authorized_members = var.authorized_members
 
   depends_on = [
     module.storage,
-    module.mongodb_atlas
+    module.mongodb_atlas,
+    module.secrets
   ]
 }
 
@@ -251,3 +250,4 @@ module "pdf-server" {
     module.secrets
   ]
 }
+
