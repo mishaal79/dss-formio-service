@@ -102,6 +102,16 @@ lb_host_rules = {
 - Concurrency: 80 requests per instance
 - Memory: 2Gi per instance
 
+**Port Configuration**:
+- Enterprise Edition: Port 3000 (Form.io Enterprise default)
+- Community Edition: Port 3001 (Form.io Community default)
+- Cloud Run PORT variable: Reserved (automatically set to 8080 in v2)
+
+**Health Check Strategy**:
+- Enterprise: HTTP probe on `/health` endpoint (port 3000)
+- Community: TCP socket probe on port 3001 (no `/health` endpoint exists)
+- Alternative endpoints for Community HTTP probes: `/spec.json`, `/config.json`
+
 ### 5. Secret Management Strategy
 
 **Decision**: Use Google Secret Manager for all sensitive data.

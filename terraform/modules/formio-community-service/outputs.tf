@@ -82,6 +82,11 @@ output "backend_service_name" {
   value       = google_compute_backend_service.formio_community_backend.name
 }
 
+output "consistent_backend_name" {
+  description = "Mathematically consistent backend service name"
+  value       = local.backend_service_name
+}
+
 output "backend_service_self_link" {
   description = "Backend service self link for centralized load balancer integration"
   value       = google_compute_backend_service.formio_community_backend.self_link

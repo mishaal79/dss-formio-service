@@ -57,7 +57,7 @@ locals {
   # Backend service naming for load balancer integration
   backend_service_name = "formio-community-backend-${var.environment}"
 
-  # Community-specific container port
+  # Use Community Edition's default port
   container_port = 3001
 
   # Environment variables for Community Edition
@@ -108,11 +108,8 @@ locals {
       value        = "0.0.0.0"
       value_source = null
     },
-    {
-      name         = "PORT"
-      value        = "3001"
-      value_source = null
-    },
+    # PORT is reserved by Cloud Run and set automatically
+    # Community runs on port 3001 defined in container_port
     # Common environment variables
     {
       name         = "PORTAL_ENABLED"
@@ -429,13 +426,14 @@ resource "google_cloud_run_v2_service" "formio_community_service" {
         apk add --no-cache jq || apt-get update && apt-get install -y jq
 
         # Assemble NODE_CONFIG from environment variables
+        # Use Form.io Community's default port 3001
         export NODE_CONFIG=$(jq -n \
           --arg mongo "$MONGO_URI" \
           --arg jwt "$JWT_SECRET" \
           --arg db "$DB_SECRET" \
           --arg host "$${HOST:-0.0.0.0}" \
           --arg protocol "$${PROTOCOL:-http}" \
-          --argjson port $${PORT:-3001} \
+          --argjson port 3001 \
           --argjson trust $${TRUST_PROXY:-true} \
           '{mongo: $mongo, port: $port, host: $host, protocol: $protocol, jwt: {secret: $jwt}, db: {secret: $db}, trust_proxy: $trust}')
 
@@ -460,23 +458,21 @@ resource "google_cloud_run_v2_service" "formio_community_service" {
         startup_cpu_boost = true
       }
 
-      # Startup probe - lenient settings for MongoDB lock resolution
+      # Startup probe - using TCP socket since /health endpoint doesn't exist in Community
       startup_probe {
-        http_get {
-          path = "/health"
-          port = local.container_port
+        tcp_socket {
+          port = local.container_port # Port 3001
         }
-        initial_delay_seconds = 180 # 3 minutes initial delay
+        initial_delay_seconds = 180 # 3 minutes initial delay for MongoDB connection
         timeout_seconds       = 30  # 30 second timeout
         period_seconds        = 60  # Check every minute
         failure_threshold     = 10  # 10 minutes total startup time
       }
 
-      # Health checks - monitors running container health
+      # Health checks - using TCP socket to check if service is listening
       liveness_probe {
-        http_get {
-          path = "/health"
-          port = local.container_port
+        tcp_socket {
+          port = local.container_port # Port 3001
         }
         initial_delay_seconds = 120 # Extended delay for MongoDB lock resolution
         timeout_seconds       = 30
