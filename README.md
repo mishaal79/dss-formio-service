@@ -29,6 +29,28 @@ make show-versions  # Compare configured vs deployed versions
 - **Region**: australia-southeast1
 - **Configuration**: Terraform as single source of truth (all values flow from Terraform → Makefile)
 
+## Configuration Patterns: Why NODE_CONFIG vs Environment Variables?
+
+### Form.io Community Edition
+- **Uses NODE_CONFIG**: The Community Edition uses the `config` npm package which expects configuration as a JSON object via the NODE_CONFIG environment variable
+- **Example**: `NODE_CONFIG='{"mongo": "mongodb://...", "jwt": {"secret": "..."}, "db": {"secret": "..."}}'`
+- **Security**: Our Terraform module assembles NODE_CONFIG at runtime using a shell script wrapper to prevent secrets from appearing in Terraform state files
+
+### Form.io Enterprise Edition
+- **Uses Direct Environment Variables**: The Enterprise Edition directly reads individual environment variables like `MONGO`, `JWT_SECRET`, `DB_SECRET`
+- **Example**: `MONGO=mongodb://...`, `JWT_SECRET=...`, `DB_SECRET=...`
+- **Security**: Terraform passes Secret Manager references directly to Cloud Run, which resolves them at container start
+
+### Why Different Approaches?
+Both editions have different underlying implementations:
+- **Community**: Uses `require('config')` which loads from `config/default.json` and can be overridden via NODE_CONFIG
+- **Enterprise**: Directly accesses `process.env.MONGO`, `process.env.JWT_SECRET`, etc.
+
+The shell script wrapper in the Community module is **not a workaround** but a **security best practice** that:
+1. Assembles NODE_CONFIG at runtime from individual secrets
+2. Prevents secrets from ever appearing in Terraform state
+3. Maintains compatibility with Form.io Community's configuration expectations
+
 ## Prerequisites
 
 ### Required Software
