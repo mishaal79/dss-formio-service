@@ -458,27 +458,20 @@ resource "google_cloud_run_v2_service" "formio_community_service" {
         startup_cpu_boost = true
       }
 
-      # Startup probe - using TCP socket since /health endpoint doesn't exist in Community
+      # Startup probe - using TCP socket (proven to work for Community)
       startup_probe {
         tcp_socket {
           port = local.container_port # Port 3001
         }
-        initial_delay_seconds = 180 # 3 minutes initial delay for MongoDB connection
-        timeout_seconds       = 30  # 30 second timeout
+        initial_delay_seconds = 240 # 4 minutes max allowed by Cloud Run
+        timeout_seconds       = 60  # 60 second timeout
         period_seconds        = 60  # Check every minute
-        failure_threshold     = 10  # 10 minutes total startup time
+        failure_threshold     = 20  # 20 minutes additional time after initial delay
       }
 
-      # Health checks - using TCP socket to check if service is listening
-      liveness_probe {
-        tcp_socket {
-          port = local.container_port # Port 3001
-        }
-        initial_delay_seconds = 120 # Extended delay for MongoDB lock resolution
-        timeout_seconds       = 30
-        period_seconds        = 60
-        failure_threshold     = 3
-      }
+      # Liveness probe removed - Form.io Community has no public endpoints
+      # All API endpoints require MongoDB initialization and/or authentication
+      # TCP startup probe is sufficient for health checking
 
       # Environment variables
       dynamic "env" {
