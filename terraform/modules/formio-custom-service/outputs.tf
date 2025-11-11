@@ -69,7 +69,7 @@ output "container_port" {
 
 output "network_endpoint_group" {
   description = "Network Endpoint Group ID"
-  value       = google_compute_network_endpoint_group.formio_custom.id
+  value       = google_compute_region_network_endpoint_group.formio_custom.id
 }
 
 output "health_check_id" {
@@ -177,7 +177,7 @@ output "integration" {
       backend_service_id = google_compute_backend_service.formio_custom.id
       backend_service_name = google_compute_backend_service.formio_custom.name
       health_check_path = "/health"
-      network_endpoint_group = google_compute_network_endpoint_group.formio_custom.id
+      network_endpoint_group = google_compute_region_network_endpoint_group.formio_custom.id
     }
 
     # Service account configuration

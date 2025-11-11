@@ -321,7 +321,7 @@ resource "google_cloud_run_service" "formio_custom" {
         startup_probe {
           http_get {
             path = "/health"
-            port = container_port
+            port = local.container_port
           }
           failure_threshold     = 3
           initial_delay_seconds = 10
@@ -332,7 +332,7 @@ resource "google_cloud_run_service" "formio_custom" {
         liveness_probe {
           http_get {
             path = "/health"
-            port = container_port
+            port = local.container_port
           }
           failure_threshold = 3
           period_seconds    = 10
@@ -506,7 +506,7 @@ resource "google_compute_backend_service" "formio_custom" {
 }
 
 # NEG for Cloud Run
-resource "google_compute_network_endpoint_group" "formio_custom" {
+resource "google_compute_region_network_endpoint_group" "formio_custom" {
   project               = var.project_id
   name                  = "${local.service_name_full}-neg"
   network_endpoint_type = "SERVERLESS"
@@ -528,7 +528,7 @@ resource "google_compute_health_check" "formio_custom" {
   unhealthy_threshold = 3
 
   http_health_check {
-    port         = container_port
+    port         = local.container_port
     request_path = "/health"
     host         = ""
   }
@@ -567,12 +567,6 @@ resource "google_monitoring_service" "formio_custom" {
     service_type = "CLOUD_RUN"
   }
 
-  # Custom service labels
-  service_labels = {
-    service_name = google_cloud_run_service.formio_custom.name
-    location     = var.region
-    project_id   = var.project_id
-  }
 }
 
 # Alert policies for critical metrics

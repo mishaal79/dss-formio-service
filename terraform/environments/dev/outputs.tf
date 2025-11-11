@@ -1,21 +1,21 @@
 # Development Environment Outputs
 # Form.io Enterprise Service - Development Deployment
 
-# Community Edition Service Outputs
-output "formio_community_service_url" {
-  description = "URL of the deployed Form.io Community service"
-  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_url : null
-}
-
-output "formio_community_service_name" {
-  description = "Name of the Community Cloud Run service"
-  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_name : null
-}
-
-output "formio_community_admin_url" {
-  description = "Form.io Community admin portal URL"
-  value       = var.deploy_community && var.portal_enabled && length(module.formio-community) > 0 ? "${module.formio-community[0].service_url}/admin" : null
-}
+# Community Edition Service Outputs (Community module not deployed in dev environment)
+# output "formio_community_service_url" {
+#   description = "URL of the deployed Form.io Community service"
+#   value       = null  # Community module not deployed
+# }
+#
+# output "formio_community_service_name" {
+#   description = "Name of the Community Cloud Run service"
+#   value       = null  # Community module not deployed
+# }
+#
+# output "formio_community_admin_url" {
+#   description = "Form.io Community admin portal URL"
+#   value       = null  # Community module not deployed
+# }
 
 # Enterprise Edition Service Outputs
 output "formio_enterprise_service_url" {
@@ -99,12 +99,12 @@ output "environment" {
 # Legacy Compatibility Outputs (deprecated)
 output "formio_service_url" {
   description = "DEPRECATED: Use formio_enterprise_service_url or formio_community_service_url"
-  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].service_url : (var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_url : null)
+  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].service_url : null
 }
 
 output "formio_admin_url" {
   description = "DEPRECATED: Use formio_enterprise_admin_url or formio_community_admin_url"
-  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? "${module.formio-enterprise[0].service_url}/admin" : (var.deploy_community && length(module.formio-community) > 0 ? "${module.formio-community[0].service_url}/admin" : null)
+  value       = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? "${module.formio-enterprise[0].service_url}/admin" : null
 }
 
 # Deployment Summary
@@ -113,7 +113,7 @@ output "deployed_services" {
   value = {
     community_deployed  = var.deploy_community
     enterprise_deployed = var.deploy_enterprise
-    community_url       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_url : null
+    community_url       = null
     enterprise_url      = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? module.formio-enterprise[0].service_url : null
   }
 }
@@ -141,7 +141,7 @@ output "enterprise_env_vars" {
 
 output "community_env_vars" {
   description = "Environment variables for Community service gcloud updates"
-  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].env_vars_for_gcloud : ""
+  value       = ""
 }
 
 output "enterprise_env_vars_debug" {
@@ -176,11 +176,8 @@ output "secret_validation" {
 output "service_registrations" {
   description = "Service registration data for both Community and Enterprise editions"
   value = {
-    community = var.deploy_community && length(module.formio-community) > 0 ? {
-      service_registration    = module.formio-community[0].service_registration
-      service_key             = module.formio-community[0].service_key
-      consistent_backend_name = module.formio-community[0].consistent_backend_name
-    } : null
+    community = null
+    null : null
     enterprise = var.deploy_enterprise && length(module.formio-enterprise) > 0 ? {
       service_registration    = module.formio-enterprise[0].service_registration
       service_key             = module.formio-enterprise[0].service_key
@@ -196,11 +193,7 @@ output "primary_service_registration" {
     service_registration    = module.formio-enterprise[0].service_registration
     service_key             = module.formio-enterprise[0].service_key
     consistent_backend_name = module.formio-enterprise[0].consistent_backend_name
-    } : (var.deploy_community && length(module.formio-community) > 0 ? {
-      service_registration    = module.formio-community[0].service_registration
-      service_key             = module.formio-community[0].service_key
-      consistent_backend_name = module.formio-community[0].consistent_backend_name
-  } : null)
+  } : null
 }
 
 # =============================================================================
@@ -210,37 +203,37 @@ output "primary_service_registration" {
 # Form.io Service Backend Information for Centralized Load Balancer
 output "formio_backend_service_id" {
   description = "Form.io backend service ID for centralized load balancer"
-  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : (var.deploy_community ? module.formio-community[0].backend_service_id : null)
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : null
 }
 
 output "formio_backend_service_name" {
   description = "Form.io backend service name for centralized load balancer"
-  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_name : (var.deploy_community ? module.formio-community[0].backend_service_name : null)
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_name : null
 }
 
 output "formio_backend_service_self_link" {
   description = "Form.io backend service self link for centralized load balancer"
-  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_self_link : (var.deploy_community ? module.formio-community[0].backend_service_self_link : null)
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_self_link : null
 }
 
 output "formio_network_endpoint_group_id" {
   description = "Form.io Network Endpoint Group ID for centralized load balancer"
-  value       = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_id : (var.deploy_community ? module.formio-community[0].network_endpoint_group_id : null)
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_id : null
 }
 
 output "formio_network_endpoint_group_name" {
   description = "Form.io Network Endpoint Group name for centralized load balancer"
-  value       = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_name : (var.deploy_community ? module.formio-community[0].network_endpoint_group_name : null)
+  value       = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_name : null
 }
 
 # Centralized load balancer integration summary
 output "centralized_load_balancer_integration" {
   description = "Summary of backend services and NEGs for centralized load balancer integration"
   value = {
-    backend_service_id   = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : (var.deploy_community ? module.formio-community[0].backend_service_id : null)
-    backend_service_name = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_name : (var.deploy_community ? module.formio-community[0].backend_service_name : null)
-    neg_id               = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_id : (var.deploy_community ? module.formio-community[0].network_endpoint_group_id : null)
-    neg_name             = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_name : (var.deploy_community ? module.formio-community[0].network_endpoint_group_name : null)
+    backend_service_id   = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : null
+    backend_service_name = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_name : null
+    neg_id               = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_id : null
+    neg_name             = var.deploy_enterprise ? module.formio-enterprise[0].network_endpoint_group_name : null
     edition              = var.deploy_enterprise ? "enterprise" : (var.deploy_community ? "community" : "none")
     ready_for_lb         = var.deploy_enterprise || var.deploy_community
   }
@@ -256,7 +249,7 @@ output "backend_service_configuration" {
     instructions = "Add the following to gcp-dss-erlich-infra-terraform/environments/${var.environment}/terraform.tfvars:"
     lb_host_rules = {
       "forms.${var.environment}.cloud.dsselectrical.com.au" = {
-        backend_service_id = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : (var.deploy_community ? module.formio-community[0].backend_service_id : null)
+        backend_service_id = var.deploy_enterprise ? module.formio-enterprise[0].backend_service_id : null
       }
     }
     note = "After updating tfvars, run 'terraform apply' in the central infrastructure project to activate routing"
@@ -269,49 +262,33 @@ output "backend_service_configuration" {
 
 output "formio_community_standalone_service_url" {
   description = "URL of the deployed Form.io Community standalone service"
-  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_url : null
+  value       = null
 }
 
 output "formio_community_standalone_service_name" {
   description = "Name of the Community standalone Cloud Run service"
-  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_name : null
+  value       = null
 }
 
 output "formio_community_standalone_backend_service_id" {
   description = "Backend service ID for Community standalone (for load balancer integration)"
-  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].backend_service_id : null
+  value       = null
 }
 
 output "formio_community_standalone_backend_service_name" {
   description = "Backend service name for Community standalone"
-  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].backend_service_name : null
+  value       = null
 }
 
 output "formio_community_standalone_deployment_status" {
   description = "Community standalone deployment status and configuration"
-  value = var.deploy_community && length(module.formio-community) > 0 ? {
-    deployed     = true
-    service_url  = module.formio-community[0].service_url
-    backend_id   = module.formio-community[0].backend_service_id
-    port         = 3001
-    database     = "formio_community"
-    storage_path = "com/${var.environment}/uploads/"
-    } : {
-    deployed = false
-  }
+  value = null
 }
 
 # Load Balancer Integration Instructions for Community Standalone
 output "community_standalone_lb_integration" {
   description = "Instructions for integrating Community standalone with central load balancer"
-  value = var.deploy_community && length(module.formio-community) > 0 ? {
-    instructions = "Add to central infrastructure tfvars:"
-    lb_host_rules = {
-      "forms-community.${var.environment}.cloud.dsselectrical.com.au" = {
-        backend_service_id = module.formio-community[0].backend_service_id
-      }
-    }
-  } : null
+  value = null
 }
 
 # =============================================================================
@@ -328,7 +305,7 @@ output "enterprise_service_name_full" {
 
 output "community_service_name_full" {
   description = "Full name of the Community Cloud Run service"
-  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].service_name : ""
+  value       = ""
 }
 
 # Docker Images (configured versions)
@@ -350,7 +327,7 @@ output "enterprise_image_deployed" {
 
 output "community_image_deployed" {
   description = "Currently deployed Docker image for Community edition"
-  value       = var.deploy_community && length(module.formio-community) > 0 ? module.formio-community[0].docker_image : ""
+  value       = ""
 }
 
 # Database Names

@@ -114,7 +114,7 @@ module "formio-custom" {
   new_revision_name   = var.new_revision_name
 
   # Database Configuration
-  mongodb_connection_string_secret_id = module.secrets.mongodb_connection_string_secret_id
+  mongodb_connection_string_secret_id = module.mongodb_atlas.mongodb_enterprise_connection_string_secret_id
   mongodb_database_name               = var.mongodb_database_name
 
   # Secrets Configuration
@@ -130,7 +130,7 @@ module "formio-custom" {
   railway_oriented_uploads  = var.railway_oriented_uploads
 
   # Storage Configuration
-  storage_bucket_name = module.storage.formio_bucket_name
+  storage_bucket_name = module.storage.bucket_name
   gcs_project_id      = var.gcs_project_id
 
   # Redis Configuration (BullMQ)
