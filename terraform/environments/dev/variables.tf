@@ -43,8 +43,14 @@ variable "authorized_members" {
 }
 
 # Service Deployment Controls
+variable "deploy_custom" {
+  description = "Whether to deploy Form.io Custom Enhanced edition service"
+  type        = bool
+  default     = true
+}
+
 variable "deploy_community" {
-  description = "Whether to deploy Form.io Community edition service"
+  description = "Whether to deploy Form.io Community edition service (legacy)"
   type        = bool
   default     = false
 }
@@ -299,4 +305,303 @@ variable "debug_mode" {
   description = "Enable debug mode for PDF server"
   type        = bool
   default     = false
+}
+
+# =============================================================================
+# CUSTOM FORM.IO SERVICE CONFIGURATION
+# =============================================================================
+
+# Custom Image Configuration
+variable "custom_image_tag" {
+  description = "Docker image tag for custom Form.io enhanced edition (mutable major tag for auto-updates)"
+  type        = string
+  default     = "4" # Mutable tag - auto-updates with minor/patch releases (4.6.0, 4.7.0, etc.)
+}
+
+variable "enable_blue_green" {
+  description = "Enable blue-green deployment for custom service"
+  type        = bool
+  default     = false
+}
+
+variable "traffic_percent_new" {
+  description = "Traffic percentage for new version (blue-green)"
+  type        = number
+  default     = 10
+}
+
+variable "new_revision_name" {
+  description = "Name of the new revision for blue-green deployment"
+  type        = string
+  default     = ""
+}
+
+# Enhanced File Upload Configuration
+variable "enable_async_gcs_upload" {
+  description = "Enable asynchronous GCS file uploads with BullMQ"
+  type        = bool
+  default     = true
+}
+
+variable "bullmq_worker_concurrency" {
+  description = "Number of BullMQ workers for async file processing"
+  type        = number
+  default     = 3
+}
+
+variable "xxhash_enabled" {
+  description = "Enable xxHash for fast file integrity validation"
+  type        = bool
+  default     = true
+}
+
+variable "railway_oriented_uploads" {
+  description = "Enable railway-oriented atomic uploads"
+  type        = bool
+  default     = true
+}
+
+# Redis Configuration (BullMQ)
+variable "redis_host" {
+  description = "Redis host address for BullMQ job queue"
+  type        = string
+  default     = "10.8.0.2" # VPC connector IP
+}
+
+variable "redis_port" {
+  description = "Redis port for BullMQ job queue"
+  type        = number
+  default     = 6379
+}
+
+# TUS Upload Configuration
+variable "tus_enabled" {
+  description = "Enable TUS resumable uploads"
+  type        = bool
+  default     = true
+}
+
+variable "tus_port" {
+  description = "TUS server port"
+  type        = number
+  default     = 1080
+}
+
+variable "tus_max_size" {
+  description = "Maximum file size for TUS uploads in bytes"
+  type        = number
+  default     = 5368709120 # 5GB
+}
+
+# Email Configuration
+variable "email_type" {
+  description = "Email service type"
+  type        = string
+  default     = "smtp"
+}
+
+variable "email_host" {
+  description = "Email server host"
+  type        = string
+  default     = "smtp.gmail.com"
+}
+
+variable "email_port" {
+  description = "Email server port"
+  type        = number
+  default     = 587
+}
+
+variable "email_secure" {
+  description = "Use secure connection for email"
+  type        = bool
+  default     = true
+}
+
+variable "email_user" {
+  description = "Email authentication username"
+  type        = string
+  default     = ""
+}
+
+variable "email_password_secret_id" {
+  description = "Secret Manager secret ID for email password"
+  type        = string
+  default     = null
+}
+
+# CORS Configuration
+variable "cors_enabled" {
+  description = "Enable CORS"
+  type        = bool
+  default     = true
+}
+
+variable "cors_origin" {
+  description = "CORS allowed origins"
+  type        = string
+  default     = "*"
+}
+
+# Cloud Run Configuration
+variable "min_instance_count" {
+  description = "Minimum number of Cloud Run instances for custom service"
+  type        = number
+  default     = 0
+}
+
+variable "max_instance_count" {
+  description = "Maximum number of Cloud Run instances for custom service"
+  type        = number
+  default     = 10
+}
+
+variable "container_concurrency" {
+  description = "Maximum number of concurrent requests per container"
+  type        = number
+  default     = 80
+}
+
+variable "request_timeout" {
+  description = "Request timeout in seconds"
+  type        = number
+  default     = 300
+}
+
+variable "memory_limit" {
+  description = "Memory limit per instance"
+  type        = string
+  default     = "1Gi"
+}
+
+variable "cpu_limit" {
+  description = "CPU limit per instance"
+  type        = string
+  default     = "1000m"
+}
+
+# CDN Configuration
+variable "cache_default_ttl" {
+  description = "Default cache TTL in seconds"
+  type        = number
+  default     = 3600 # 1 hour
+}
+
+variable "cache_max_ttl" {
+  description = "Maximum cache TTL in seconds"
+  type        = number
+  default     = 86400 # 24 hours
+}
+
+variable "cache_client_ttl" {
+  description = "Client cache TTL in seconds"
+  type        = number
+  default     = 1800 # 30 minutes
+}
+
+variable "cache_query_whitelist" {
+  description = "Query string parameters to include in cache key"
+  type        = list(string)
+  default     = ["version", "locale", "v"]
+}
+
+variable "cache_headers" {
+  description = "HTTP headers to include in cache key"
+  type        = list(string)
+  default     = ["Authorization", "Cookie"]
+}
+
+variable "bypass_cache_headers" {
+  description = "Request headers that bypass cache"
+  type        = list(string)
+  default     = ["Authorization", "Cookie"]
+}
+
+variable "log_sample_rate" {
+  description = "Sample rate for CDN logging"
+  type        = number
+  default     = 0.1
+}
+
+# IAP Configuration
+variable "iap_enabled" {
+  description = "Enable Identity-Aware Proxy"
+  type        = bool
+  default     = false
+}
+
+variable "iap_client_id" {
+  description = "IAP OAuth2 client ID"
+  type        = string
+  default     = ""
+}
+
+variable "iap_client_secret" {
+  description = "IAP OAuth2 client secret"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+# DNS Configuration
+variable "create_dns_record" {
+  description = "Create DNS record for the service"
+  type        = bool
+  default     = false
+}
+
+variable "dns_project_id" {
+  description = "DNS project ID"
+  type        = string
+  default     = "erlich-dev"
+}
+
+variable "dns_managed_zone" {
+  description = "DNS managed zone name"
+  type        = string
+  default     = "dsselectrical-com-au"
+}
+
+variable "dns_name" {
+  description = "DNS record name"
+  type        = string
+  default     = "forms-custom-dev"
+}
+
+# Monitoring and Alerting
+variable "enable_alerting" {
+  description = "Enable monitoring alerts"
+  type        = bool
+  default     = true
+}
+
+variable "error_rate_threshold" {
+  description = "Error rate threshold for alerts"
+  type        = number
+  default     = 5.0
+}
+
+variable "latency_threshold" {
+  description = "Latency threshold for alerts (ms)"
+  type        = number
+  default     = 1000
+}
+
+variable "notification_channels" {
+  description = "List of notification channel IDs for alerts"
+  type        = list(string)
+  default     = []
+}
+
+variable "debug_enabled" {
+  description = "Enable debug logging"
+  type        = bool
+  default     = false
+}
+
+# GCS Project Configuration
+variable "gcs_project_id" {
+  description = "GCP project ID for GCS operations"
+  type        = string
+  default     = "" # Uses project_id if empty
 }

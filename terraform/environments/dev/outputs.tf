@@ -364,6 +364,40 @@ output "community_database_name" {
   value       = local.mongodb_community_db_name
 }
 
+# =============================================================================
+# FORM WEB BFF OUTPUTS
+# =============================================================================
+
+output "form_web_bff_service_url" {
+  description = "Form Web BFF service URL"
+  value       = var.deploy_custom && length(module.form-web-bff) > 0 ? module.form-web-bff[0].service_url : null
+}
+
+output "form_web_bff_backend_service_id" {
+  description = "Form Web BFF backend service ID (for load balancer integration)"
+  value       = var.deploy_custom && length(module.form-web-bff) > 0 ? module.form-web-bff[0].backend_service_id : null
+}
+
+output "form_web_bff_service_name" {
+  description = "Form Web BFF Cloud Run service name"
+  value       = var.deploy_custom && length(module.form-web-bff) > 0 ? module.form-web-bff[0].service_name : null
+}
+
+output "form_web_bff_health_check_url" {
+  description = "Form Web BFF health check endpoint URL"
+  value       = var.deploy_custom && length(module.form-web-bff) > 0 ? module.form-web-bff[0].health_check_url : null
+}
+
+output "form_web_bff_container_port" {
+  description = "Form Web BFF container port (for verification)"
+  value       = var.deploy_custom && length(module.form-web-bff) > 0 ? module.form-web-bff[0].container_port : null
+}
+
+output "form_web_bff_integration" {
+  description = "Form Web BFF integration configuration"
+  value       = var.deploy_custom && length(module.form-web-bff) > 0 ? module.form-web-bff[0].integration : null
+}
+
 # Deployment Status
 output "deployment_status" {
   description = "Current deployment status for Makefile consumption"

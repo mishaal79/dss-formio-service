@@ -1,483 +1,284 @@
-# DSS Form.io Service
+# DSS Form.io Service - Infrastructure as Code
 
-Enterprise form management service deployed on Google Cloud Platform using Form.io, MongoDB Atlas, and central infrastructure resources.
+Terraform modules for deploying Form.io services to Google Cloud Platform.
 
-## Quick Start
+## Overview
 
-```bash
-# Set up environment
-cp .env.example .env
-# Edit .env with your credentials
+This repository contains production-ready Terraform modules for deploying
+Form.io services and related infrastructure on GCP Cloud Run.
 
-# Deploy infrastructure
-make init           # Initialize Terraform
-make plan           # Review changes
-make apply          # Apply infrastructure
+## Git-Subrepo Management
 
-# Deploy applications
-make deploy-ent     # Deploy Enterprise (uses Terraform's configured version)
-make show-versions  # Compare configured vs deployed versions
-```
+This directory is managed as a git-subrepo linked to
+`mishaal79/dss-formio-service`.
 
-## Architecture Overview
+### Quick Reference
 
-- **Form.io Editions**: Both Community (open-source) and Enterprise (licensed)
-- **Database**: MongoDB Atlas Flex Cluster (managed, cost-effective)
-- **Storage**: Google Cloud Storage for file uploads
-- **Infrastructure**: Central VPC from `gcp-dss-erlich-infra-terraform`
-- **Load Balancer**: Centralized architecture in central infrastructure project
-- **Region**: australia-southeast1
-- **Configuration**: Terraform as single source of truth (all values flow from Terraform → Makefile)
-
-## Configuration Patterns: Why NODE_CONFIG vs Environment Variables?
-
-### Form.io Community Edition
-- **Uses NODE_CONFIG**: The Community Edition uses the `config` npm package which expects configuration as a JSON object via the NODE_CONFIG environment variable
-- **Example**: `NODE_CONFIG='{"mongo": "mongodb://...", "jwt": {"secret": "..."}, "db": {"secret": "..."}}'`
-- **Security**: Our Terraform module assembles NODE_CONFIG at runtime using a shell script wrapper to prevent secrets from appearing in Terraform state files
-
-### Form.io Enterprise Edition
-- **Uses Direct Environment Variables**: The Enterprise Edition directly reads individual environment variables like `MONGO`, `JWT_SECRET`, `DB_SECRET`
-- **Example**: `MONGO=mongodb://...`, `JWT_SECRET=...`, `DB_SECRET=...`
-- **Security**: Terraform passes Secret Manager references directly to Cloud Run, which resolves them at container start
-
-### Why Different Approaches?
-Both editions have different underlying implementations:
-- **Community**: Uses `require('config')` which loads from `config/default.json` and can be overridden via NODE_CONFIG
-- **Enterprise**: Directly accesses `process.env.MONGO`, `process.env.JWT_SECRET`, etc.
-
-The shell script wrapper in the Community module is **not a workaround** but a **security best practice** that:
-1. Assembles NODE_CONFIG at runtime from individual secrets
-2. Prevents secrets from ever appearing in Terraform state
-3. Maintains compatibility with Form.io Community's configuration expectations
-
-## Prerequisites
-
-### Required Software
-- **Terraform** >= 1.6.0
-- **Google Cloud SDK** (gcloud authenticated)
-- **Make** (for automation commands)
-- **MongoDB Shell** (mongosh) for database operations
-
-### Required Access
-- GCP Project with enabled APIs (Cloud Run, Secret Manager, Storage)
-- Form.io Enterprise License (expires: 08/29/2025)
-- MongoDB Atlas account with API keys
-- Access to central infrastructure repository (`gcp-dss-erlich-infra-terraform`)
-
-### Required Permissions
-- Cloud Run Admin
-- Secret Manager Admin
-- Storage Admin
-- VPC Network User (for central infrastructure VPC)
-
-## Environment Configuration
-
-### 1. Create Environment File
+**Push local changes to fork**:
 
 ```bash
-cp .env.example .env
+HUSKY=0 git subrepo push dss-formio-service -b main
 ```
 
-### 2. Configure Required Variables
+**Pull changes from fork**:
 
 ```bash
-# Form.io Configuration
-export TF_VAR_formio_license_key="your-license-key"
-export TF_VAR_formio_root_email="admin@domain.com"
-
-# MongoDB Atlas Configuration
-export MONGODB_ATLAS_PUBLIC_KEY="your-atlas-public-key"
-export MONGODB_ATLAS_PRIVATE_KEY="your-atlas-private-key"
-export TF_VAR_mongodb_atlas_org_id="your-atlas-org-id"
-
-# GCP Project
-export TF_VAR_project_id="your-gcp-project-id"
+HUSKY=0 git subrepo pull dss-formio-service
 ```
 
-### 3. MongoDB Atlas Setup
-
-1. Sign up at [cloud.mongodb.com](https://cloud.mongodb.com)
-2. Create Organization and generate API keys
-3. Set Role: "Organization Project Creator"
-4. Add credentials to `.env` file
-
-## Deployment Commands
-
-### Infrastructure Management
+**Check status**:
 
 ```bash
-make init          # Initialize Terraform
-make plan          # Preview infrastructure changes
-make apply         # Deploy infrastructure (MongoDB, storage, secrets)
-make destroy       # Tear down infrastructure (with confirmation)
-make check         # Run quality checks (format + lint)
-make security      # Run security scans
+git subrepo status dss-formio-service
 ```
 
-### Application Deployment
+> **Note**: Use `HUSKY=0` prefix to bypass commit-msg hooks that conflict with
+> git-subrepo's commit message format.
 
-```bash
-# Deploy using Terraform's configured versions
-make deploy-ent               # Deploy Enterprise with configured version
-make deploy-com               # Deploy Community with configured version
-make deploy-configured        # Deploy all enabled editions
+### Development Workflow
 
-# Deploy specific versions (override Terraform)
-make deploy-ent IMG=formio/formio-enterprise:9.5.1
-make deploy-com IMG=formio/formio:v4.6.0
+1. **Make changes** in monorepo: `dss-formio-service/`
+2. **Test changes**:
+   ```bash
+   cd dss-formio-service/terraform/environments/dev
+   terraform init
+   terraform plan
+   ```
+3. **Commit in monorepo**:
+   ```bash
+   git add dss-formio-service/
+   git commit -m "feat(monorepo): add new Cloud Run service"
+   ```
+4. **Push to fork**:
+   ```bash
+   HUSKY=0 git subrepo push dss-formio-service -b main
+   ```
 
-# Version management
-make show-versions           # Compare configured vs deployed versions
+### Fork Repository
 
-# Environment variable updates
-make update-ent              # Update Enterprise env vars from Terraform
-make update-com              # Update Community env vars from Terraform
+- **Remote**: `git@github.com:mishaal79/dss-formio-service.git`
+- **Branch**: `main`
+- **Visibility**: Private
 
-# Traffic management
-make traffic-ent-100         # Route 100% traffic to Enterprise latest
-make traffic-com-100         # Route 100% traffic to Community latest
-```
-
-### Target Different Environments
-
-```bash
-# All commands support ENV variable
-ENV=prod make plan           # Plan production changes
-ENV=prod make apply          # Apply to production
-ENV=prod make deploy-ent     # Deploy to production
-ENV=prod make show-versions  # Show production versions
-```
-
-### Monitoring & Maintenance
-
-```bash
-make status              # Check deployment status
-make show-versions       # Compare configured vs deployed versions
-make logs-ent           # View Enterprise edition logs
-make logs-com           # View Community edition logs
-make atlas-status       # Show MongoDB Atlas status
-make health-check       # Run comprehensive health check
-make restart-services   # Restart services to pick up changes
-```
-
-## Project Structure
+## Directory Structure
 
 ```
 dss-formio-service/
-├── Makefile                 # Deployment automation (reads from Terraform)
-├── README.md               # This file
-├── ARCHITECTURE.md         # Design decisions and rationale
-├── CLAUDE.md              # AI assistant configuration
 ├── terraform/
-│   ├── environments/       # Environment configurations
-│   │   ├── dev/           # Development environment
-│   │   │   ├── main.tf    # Dev infrastructure
-│   │   │   ├── variables.tf # Configuration values (source of truth)
-│   │   │   └── outputs.tf   # Exposes config for Makefile
-│   │   └── prod/          # Production environment
-│   └── modules/           # Reusable Terraform modules
-│       ├── formio-service/    # Form.io Cloud Run deployment
-│       ├── mongodb-atlas/     # MongoDB Atlas configuration
-│       ├── secrets/           # Secret Manager setup
-│       └── storage/           # GCS bucket configuration
-├── scripts/               # Automation scripts
-│   ├── health-check.sh   # Service health checks
-│   ├── init-atlas-databases.sh  # MongoDB initialization
-│   └── run-tests.sh      # Terraform test runner
-└── local-testing/        # Local development setup
+│   ├── environments/
+│   │   ├── dev/                    # Development environment
+│   │   │   ├── main.tf
+│   │   │   ├── variables.tf
+│   │   │   ├── outputs.tf
+│   │   │   ├── terraform.tf
+│   │   │   └── terraform.tfvars.example
+│   │   ├── prod/                   # Production environment
+│   │   └── production/             # Alternative production config
+│   │
+│   └── modules/
+│       ├── formio-service/         # Main Form.io server deployment
+│       ├── form-web-bff/           # Backend-for-Frontend service
+│       ├── cloud-run/              # Reusable Cloud Run module
+│       ├── formio-community-service/  # Community edition
+│       ├── formio-custom-service/  # Enterprise edition
+│       ├── mongodb-atlas/          # MongoDB Atlas integration
+│       ├── pdf-server/             # PDF generation service
+│       └── storage/                # GCS bucket management
+│
+├── tests/
+│   ├── unit/                       # Terraform unit tests
+│   └── integration/                # Integration tests
+│
+├── docs/
+│   ├── PRD_FORM_WEB_BFF_MODULE.md # Module requirements
+│   └── ANALYSIS_SUMMARY.md         # Technical analysis
+│
+├── .gitignore                      # Terraform artifacts exclusion
+├── .tflint.hcl                     # Linting configuration
+├── .pre-commit-config.yaml         # Pre-commit hooks
+└── Makefile                        # Operational commands
 ```
 
-## Service Access
+## Quick Start
 
-After deployment, access services at:
+### Prerequisites
 
-- **Community Edition**: `https://dss-formio-com-dev-*.run.app`
-- **Enterprise Edition**: `https://dss-formio-ent-dev-*.run.app`
+- Terraform >= 1.5.0
+- GCP account with billing enabled
+- gcloud CLI configured
+- Service account with appropriate permissions
 
-Default credentials:
-- Email: Configured via `TF_VAR_formio_root_email`
-- Password: Auto-generated in Secret Manager
+### Local Development
 
-## Database Architecture
+1. **Initialize Terraform**:
 
-### MongoDB Atlas Configuration
-- **Provider**: GCP (australia-southeast2)
-- **Cluster Type**: Flex (M0 equivalent, cost-effective)
-- **Databases**:
-  - `formio_community` - Community edition data
-  - `formio_enterprise` - Enterprise edition data
-- **Backup**: Daily automated backups
-- **Security**: TLS encryption + credential authentication
-
-### Connection Security
-- Connection strings stored in Secret Manager
-- Automatic password rotation support
-- Network access: Open (0.0.0.0/0) with TLS + auth
-
-## Central Infrastructure Integration
-
-This service integrates with the central infrastructure project (`gcp-dss-erlich-infra-terraform`) which provides:
-- VPC networking and subnets
-- Centralized load balancer
-- DNS zones
-- Cloud NAT for egress
-
-### Integration Steps
-
-1. **Deploy this service** to create backend services:
-   ```bash
-   make init
-   make plan
-   make apply
-   ```
-
-2. **Note the backend service ID** from outputs:
    ```bash
    cd terraform/environments/dev
-   terraform output backend_service_configuration
+   terraform init
    ```
 
-3. **Update central infrastructure** `terraform.tfvars`:
-   ```hcl
-   lb_host_rules = {
-     "forms.dev.cloud.dsselectrical.com.au" = {
-       backend_service_id = "projects/PROJECT_ID/global/backendServices/formio-backend-dev"
-     }
-   }
-   ```
+2. **Create tfvars file**:
 
-4. **Apply central infrastructure** to activate routing:
    ```bash
-   cd ../gcp-dss-erlich-infra-terraform/environments/dev
+   cp terraform.tfvars.example terraform.tfvars
+   # Edit terraform.tfvars with your GCP project details
+   ```
+
+3. **Plan deployment**:
+
+   ```bash
+   terraform plan
+   ```
+
+4. **Apply changes**:
+   ```bash
    terraform apply
    ```
 
-### Why Manual Configuration?
+### Environment Variables
 
-This architecture uses deliberate tfvars configuration rather than automatic remote state consumption to:
-- Avoid circular dependencies between projects
-- Maintain explicit configuration control
-- Enable stable production deployments
-- Support automation via CI/CD pipelines
+Required for deployment:
 
-## Security Features
+- `GCP_PROJECT_ID` - Google Cloud project ID
+- `GCP_REGION` - Deployment region (e.g., `us-central1`)
+- `MONGODB_URI` - MongoDB connection string
+- `JWT_SECRET` - Form.io JWT secret
+- `DB_SECRET` - Form.io database encryption secret
 
-- **Secret Management**: All sensitive data in GCP Secret Manager
-- **TLS Encryption**: Enforced for all connections
-- **Authentication**: Form.io built-in auth with JWT tokens
-- **Network Security**: Private VPC with controlled egress
-- **Compliance**: PCI-DSS scope considerations
+See `terraform/environments/dev/terraform.tfvars.example` for complete list.
 
-## Form.io Portal File Storage Configuration
+## Modules
 
-### S3-Compatible Storage (GCS)
+### formio-service
 
-Form.io file uploads are configured to use Google Cloud Storage via S3-compatible API. The infrastructure is automatically provisioned by Terraform, but the Form.io portal requires manual configuration.
+Main Form.io server deployment on Cloud Run.
 
-#### Critical Configuration Requirement
+**Features**:
 
-⚠️ **IMPORTANT**: You MUST enable "Use MinIO Server" in the Form.io portal for GCS S3-compatible storage to work correctly. This is a PORTAL configuration, NOT a server environment variable configuration.
+- Autoscaling (1-10 instances)
+- VPC connector integration
+- Secret Manager integration
+- Cloud SQL (PostgreSQL) support
 
-#### Portal Configuration Steps
+### form-web-bff
 
-1. **Navigate to Form.io Portal**
-   - Go to your project settings
-   - Select "Settings" → "Integrations" → "File Storage"
-   - Select the "S3" tab
+Backend-for-Frontend service for SPA applications.
 
-2. **Enable MinIO Mode (CRITICAL)**
-   - ✅ **CHECK "Use MinIO Server"** - This enables S3-compatible storage for non-AWS providers
-   - This changes URL generation from AWS virtual-hosted-style to path-style URLs
+**Features**:
 
-3. **Retrieve Credentials from Secret Manager**
-   ```bash
-   # Get Access Key ID
-   gcloud secrets versions access latest \
-     --secret="dss-formio-api-ent-gcs-s3-key-dev" \
-     --project=erlich-dev
+- Configurable ports (default: 3001)
+- CORS handling
+- API gateway patterns
+- Load balancing
 
-   # Get Secret Access Key
-   gcloud secrets versions access latest \
-     --secret="dss-formio-api-ent-gcs-s3-secret-dev" \
-     --project=erlich-dev
-   ```
+### cloud-run
 
-4. **Enter Configuration Values**
-   - **MinIO Server URL**: `https://storage.googleapis.com`
-   - **Access Key ID**: (Retrieved from Secret Manager)
-   - **Secret Access Key**: (Retrieved from Secret Manager)
-   - **Bucket Name**: `erlich-dev-formio-storage-dev-g004azjs`
-   - **Bucket Region**: Leave empty or use `auto`
-   - **Starts With (Folder)**: `ent/dev/uploads/` (for Enterprise) or `pdf/dev/uploads/` (for PDF server)
+Reusable Cloud Run service module.
 
-5. **Optional Settings**
-   - **Access Control List**: `private` (recommended) or `public-read`
-   - **Max File Size**: `104857600` (100MB in bytes)
-   - **Policy Expiration**: `3600` (1 hour in seconds)
-   - **Enable S3 Multipart**: Yes (for large file uploads)
+**Features**:
 
-#### How It Works
-
-When "Use MinIO Server" is enabled:
-- Server responds with `"minio":true` in storage requests
-- Generates path-style URLs: `https://storage.googleapis.com/bucket/path`
-- Compatible with GCS S3-compatible API
-
-When NOT enabled (default):
-- Server responds with `"minio":false`
-- Generates AWS virtual-hosted-style URLs: `bucket.s3.region.amazonaws.com`
-- Does NOT work with GCS
-
-#### Common Mistakes to Avoid
-
-❌ **DO NOT add these environment variables** (they are incorrect and not in documentation):
-- `FORMIO_S3_ENDPOINT` - This is NOT a valid Form.io environment variable
-- `FORMIO_S3_FORCE_PATH_STYLE` - This is NOT a valid Form.io environment variable
-
-❌ **DO NOT change** `FORMIO_S3_REGION` from `auto` to actual GCS region like `australia-southeast1`
-- Google Cloud documentation specifies using `auto` for S3-compatible API
-
-❌ **DO NOT forget** to check "Use MinIO Server" in portal
-- Without this, Form.io will generate AWS-style URLs that don't work with GCS
-
-#### Troubleshooting
-
-1. **Verify MinIO Mode is Enabled**
-   ```bash
-   # Test the storage endpoint
-   curl 'https://your-formio-service.run.app/project/YOUR_PROJECT_ID/form/YOUR_FORM_ID/storage/s3' \
-     -H 'x-jwt-token: YOUR_JWT_TOKEN' \
-     --data-raw '{"name":"test.txt","size":100,"type":"text/plain"}'
-   ```
-   
-   Look for `"minio":true` in the response. If it shows `"minio":false`, the MinIO mode is not enabled in portal.
-
-2. **Check Presigned URL Format**
-   - ✅ Correct (MinIO mode): `https://storage.googleapis.com/bucket-name/path/to/file?...`
-   - ❌ Wrong (AWS mode): `https://bucket-name.s3.auto.amazonaws.com/path/to/file?...`
-
-3. **Server Environment Variables** (already configured by Terraform)
-   - `FORMIO_S3_SERVER=https://storage.googleapis.com`
-   - `FORMIO_S3_BUCKET=bucket-name`
-   - `FORMIO_S3_REGION=auto`
-   - `FORMIO_S3_KEY` and `FORMIO_S3_SECRET` from Secret Manager
-
-#### Important Notes
-
-- The solution is primarily in the PORTAL configuration, not server environment variables
-- Credentials are stored in Google Secret Manager and should never be committed to code
-- Region must be `auto` as documented in [Google Cloud S3 migration guide](https://cloud.google.com/storage/docs/aws-simple-migration)
-
-## Configuration Management
-
-### Single Source of Truth
-
-This project follows the DRY (Don't Repeat Yourself) principle with Terraform as the single source of truth:
-
-1. **All configuration originates in Terraform** (`terraform/environments/*/variables.tf`)
-2. **Terraform outputs expose configuration** (`terraform/environments/*/outputs.tf`)
-3. **Makefile dynamically reads from Terraform** (no hardcoded values)
-4. **gcloud commands use Terraform-provided values**
-
-Example flow:
-```
-Terraform variables → Terraform outputs → Makefile reads → gcloud uses
-```
-
-This ensures:
-- No configuration duplication
-- Consistent values across all tools
-- Single place to update configuration
-- Environment-specific overrides work correctly
+- Container deployment
+- Environment variable management
+- IAM role binding
+- Health checks
+- Traffic splitting
 
 ## Testing
 
+### Unit Tests
+
 ```bash
-make test          # Run Terraform tests
-make check         # Run quality checks (format + lint)
-make security      # Run security scans
+cd tests/unit
+terraform test
 ```
 
-Test coverage includes:
-- Module validation
-- License key verification
-- Environment configuration
-- Service health checks
+### Integration Tests
+
+```bash
+cd tests/integration
+terraform test
+```
+
+### Manual Validation
+
+```bash
+make plan ENV=dev
+make validate ENV=dev
+```
+
+## Deployment
+
+### Development Environment
+
+```bash
+cd terraform/environments/dev
+terraform init
+terraform apply
+```
+
+### Production Environment
+
+```bash
+cd terraform/environments/prod
+terraform init
+terraform plan -out=tfplan
+terraform apply tfplan
+```
+
+## Maintenance
+
+### Updating Modules
+
+1. Make changes in `terraform/modules/`
+2. Update version tags if using registry
+3. Test in dev environment
+4. Deploy to production
+
+### Terraform State
+
+State is stored in GCS bucket (configured in `terraform.tf`).
+
+**State locking**: Enabled via GCS backend
+
+**State backup**: Automatic via GCS versioning
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **MongoDB Connection Failed**
-   ```bash
-   # Check Atlas cluster status
-   make logs-com | grep mongo
-   # Verify connection string in Secret Manager
-   ```
+**Issue**: Terraform provider download fails **Solution**: Run
+`terraform providers lock` to regenerate lock file
 
-2. **License Validation Error**
-   ```bash
-   # Ensure internet egress for license.form.io
-   # Check Cloud NAT configuration
-   ```
+**Issue**: Permission denied on GCS bucket **Solution**: Check service account
+has `roles/storage.objectAdmin`
 
-3. **Service Unhealthy**
-   ```bash
-   make status
-   make logs-ent | grep error
-   ```
+**Issue**: Cloud Run deployment timeout **Solution**: Increase `timeout_seconds`
+in module configuration
 
-### Debug Commands
+### Debugging
+
+Enable detailed logging:
 
 ```bash
-# Check service details
-gcloud run services describe dss-formio-com-dev --region=australia-southeast1
-
-# View secret values (carefully)
-gcloud secrets versions access latest --secret=formio-root-password
-
-# MongoDB connection test
-mongosh "mongodb+srv://cluster-url" --username admin
+export TF_LOG=DEBUG
+terraform plan
 ```
 
-## Maintenance
+Check Cloud Run logs:
 
-### Regular Tasks
+```bash
+gcloud logging read "resource.type=cloud_run_revision" --limit 50
+```
 
-- **License Renewal**: Enterprise license expires 08/29/2025
-- **Security Updates**: Update Form.io images monthly
-- **Backup Verification**: Test MongoDB restore quarterly
-- **Cost Review**: Monitor Atlas and Cloud Run usage
+## Contributing
 
-### Upgrade Procedure
-
-1. Test new version in dev environment
-2. Update image tag in deployment command
-3. Run health checks
-4. Monitor logs for errors
-5. Roll back if issues detected
-
-## Cost Optimization
-
-- **MongoDB Atlas Flex**: ~$9/month (vs $57 for M10)
-- **Cloud Run**: Scales to zero when idle
-- **Storage**: Lifecycle policies for old files
-- **Networking**: Shared infrastructure reduces costs
-
-## Support
-
-- **Form.io Documentation**: [docs.form.io](https://docs.form.io)
-- **MongoDB Atlas**: [docs.atlas.mongodb.com](https://docs.atlas.mongodb.com)
-- **GCP Cloud Run**: [cloud.google.com/run/docs](https://cloud.google.com/run/docs)
-- **Internal**: Contact platform-team@dss.com
+See [CONTRIBUTING.md](../CONTRIBUTING.md) in monorepo root.
 
 ## License
 
-Form.io Enterprise License: `pOHMsV0uoOkfAS6q2jmugmr3Tm5VMt`
-- Expires: August 29, 2025
-- Tier: Developer (25 users)
-- Projects: Unlimited
+See [LICENSE](../LICENSE) in monorepo root.
 
 ---
-Last Updated: 2025
+
+**Maintained By**: Qrius Global **Pattern**: Git-subrepo managed infrastructure
+**Last Updated**: 2025-11-07

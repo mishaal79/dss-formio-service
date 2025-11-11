@@ -96,47 +96,179 @@ module "mongodb_atlas" {
 # Load balancer module removed - now using centralized load balancer architecture
 # Backend services are now created within formio-service modules for central infrastructure integration
 
-module "formio-community" {
-  count  = var.deploy_community ? 1 : 0
-  source = "../../modules/formio-community-service" # Use new standalone module
+module "formio-custom" {
+  count = var.deploy_custom ? 1 : 0
 
+  source = "../../modules/formio-custom-service"
+
+  # Required
   project_id  = var.project_id
   region      = var.region
   environment = var.environment
   labels      = local.common_labels
 
-  # VPC Network Configuration
-  vpc_network_id   = data.terraform_remote_state.central_infra.outputs.vpc_network_id
-  egress_subnet_id = data.terraform_remote_state.central_infra.outputs.egress_subnet_id
+  # Custom Image Configuration
+  custom_image_tag    = var.custom_image_tag
+  enable_blue_green   = var.enable_blue_green
+  traffic_percent_new = var.traffic_percent_new
+  new_revision_name   = var.new_revision_name
 
-  # Community Edition Configuration
-  community_version = var.community_version
-  formio_root_email = var.formio_root_email
+  # Database Configuration
+  mongodb_connection_string_secret_id = module.secrets.mongodb_connection_string_secret_id
+  mongodb_database_name               = var.mongodb_database_name
 
-  # Secret Manager Integration - Community uses separate connection string
-  mongodb_connection_string_secret_id = module.mongodb_atlas.mongodb_community_connection_string_secret_id
-  formio_jwt_secret_secret_id         = module.secrets.formio_jwt_secret_secret_id
-  formio_db_secret_secret_id          = module.secrets.formio_db_secret_secret_id
-  formio_root_password_secret_id      = module.secrets.formio_root_password_secret_id
+  # Secrets Configuration
+  formio_jwt_secret_secret_id    = module.secrets.formio_jwt_secret_secret_id
+  formio_db_secret_secret_id     = module.secrets.formio_db_secret_secret_id
+  formio_root_email              = var.formio_root_email
+  formio_root_password_secret_id = module.secrets.formio_root_password_secret_id
+
+  # Enhanced File Upload Configuration
+  enable_async_gcs_upload   = var.enable_async_gcs_upload
+  bullmq_worker_concurrency = var.bullmq_worker_concurrency
+  xxhash_enabled            = var.xxhash_enabled
+  railway_oriented_uploads  = var.railway_oriented_uploads
 
   # Storage Configuration
-  storage_bucket_name = module.storage.bucket_name
+  storage_bucket_name = module.storage.formio_bucket_name
+  gcs_project_id      = var.gcs_project_id
 
-  # Resource Configuration
-  max_instances   = var.max_instances
-  min_instances   = var.min_instances
-  cpu_request     = var.cpu_request
-  memory_request  = var.memory_request
-  concurrency     = var.concurrency
-  timeout_seconds = var.timeout_seconds
+  # Redis Configuration (BullMQ)
+  redis_host               = var.redis_host
+  redis_port               = var.redis_port
+  redis_password_secret_id = null # Redis in VPC no auth
 
-  # Security Configuration
-  authorized_members = var.authorized_members
+  # Service Configuration
+  portal_enabled = var.portal_enabled
+  debug_enabled  = var.debug_enabled
+
+  # TUS Upload Configuration
+  tus_enabled  = var.tus_enabled
+  tus_port     = var.tus_port
+  tus_max_size = var.tus_max_size
+
+  # Email Configuration
+  email_type               = var.email_type
+  email_host               = var.email_host
+  email_port               = var.email_port
+  email_secure             = var.email_secure
+  email_user               = var.email_user
+  email_password_secret_id = var.email_password_secret_id
+
+  # CORS Configuration
+  cors_enabled = var.cors_enabled
+  cors_origin  = var.cors_origin
+
+  # Cloud Run Configuration
+  min_instance_count    = var.min_instance_count
+  max_instance_count    = var.max_instance_count
+  container_concurrency = var.container_concurrency
+  request_timeout       = var.request_timeout
+  memory_limit          = var.memory_limit
+  memory_request        = var.memory_request
+  cpu_limit             = var.cpu_limit
+  cpu_request           = var.cpu_request
+
+  # CDN Configuration
+  cache_default_ttl     = var.cache_default_ttl
+  cache_max_ttl         = var.cache_max_ttl
+  cache_client_ttl      = var.cache_client_ttl
+  cache_query_whitelist = var.cache_query_whitelist
+  cache_headers         = var.cache_headers
+  bypass_cache_headers  = var.bypass_cache_headers
+  log_sample_rate       = var.log_sample_rate
+
+  # IAP Configuration
+  iap_enabled       = var.iap_enabled
+  iap_client_id     = var.iap_client_id
+  iap_client_secret = var.iap_client_secret
+
+  # DNS Configuration
+  create_dns_record = var.create_dns_record
+  dns_project_id    = var.dns_project_id
+  dns_managed_zone  = var.dns_managed_zone
+  dns_name          = var.dns_name
+
+  # Monitoring and Alerting
+  enable_alerting       = var.enable_alerting
+  error_rate_threshold  = var.error_rate_threshold
+  latency_threshold     = var.latency_threshold
+  notification_channels = var.notification_channels
 
   depends_on = [
     module.storage,
     module.mongodb_atlas,
     module.secrets
+  ]
+}
+
+# Legacy formio-community module - kept for reference
+# module "formio-community" {
+#   count  = var.deploy_community ? 1 : 0
+#   source = "../../modules/formio-community-service"
+#   project_id  = var.project_id
+#   region      = var.region
+#   environment = var.environment
+#   labels      = local.common_labels
+# }
+
+# =============================================================================
+# FORM WEB BFF DEPLOYMENT
+# =============================================================================
+
+module "form-web-bff" {
+  count  = var.deploy_custom ? 1 : 0 # Deploy BFF when custom is deployed
+  source = "../../modules/form-web-bff"
+
+  # Project configuration
+  project_id  = var.project_id
+  region      = var.region
+  environment = var.environment
+  labels      = local.common_labels
+
+  # Docker image from Cloud Build
+  image_url = "gcr.io/${var.project_id}/form-web-bff:latest"
+
+  # Port configuration (variable-based, not hardcoded)
+  container_port = 3002
+
+  # VPC networking (from central infrastructure)
+  vpc_connector_id   = data.terraform_remote_state.central_infra.outputs.vpc_connector_id
+  vpc_egress_setting = "PRIVATE_RANGES_ONLY"
+
+  # Service-to-service authentication to formio-custom
+  formio_custom_service_name = var.deploy_custom ? module.formio-custom[0].service_name : ""
+  formio_custom_service_url  = var.deploy_custom ? module.formio-custom[0].service_url : ""
+
+  # Cloud Run scaling configuration
+  min_instance_count    = 0 # Scale to zero in dev
+  max_instance_count    = 10
+  container_concurrency = 80
+  request_timeout       = 60
+
+  # Resource limits (lower for dev to save costs)
+  memory_limit = "512Mi"
+  cpu_limit    = "1000m"
+
+  # Application configuration
+  node_env  = "production"
+  log_level = "info"
+
+  # CORS configuration (allow test app)
+  cors_origin = "http://localhost:64849,https://form-web-client-dev-*.run.app"
+
+  # Rate limiting (relaxed for dev)
+  rate_limit_max       = 1000
+  rate_limit_window_ms = 60000
+
+  # Observability (optional in dev)
+  otel_endpoint = ""
+
+  # Public access for dev environment
+  allow_unauthenticated = true
+
+  depends_on = [
+    module.formio-custom
   ]
 }
 

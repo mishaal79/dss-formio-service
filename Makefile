@@ -47,14 +47,17 @@ REGION := $(call tf_output,region,australia-southeast1)
 # Service names from Terraform
 SERVICE_ENT := $(call tf_output,enterprise_service_name_full,dss-formio-api-ent-$(ENV))
 SERVICE_COM := $(call tf_output,community_service_name_full,dss-formio-api-com-$(ENV))
+SERVICE_CUSTOM := $(call tf_output,custom_service_name_full,formio-custom-$(ENV))
 
 # Docker images from Terraform (configured versions)
 IMG_ENT_CONFIGURED := $(call tf_output,enterprise_image_configured,formio/formio-enterprise:9.6.0-rc.4)
 IMG_COM_CONFIGURED := $(call tf_output,community_image_configured,formio/formio:rc)
+IMG_CUSTOM_CONFIGURED := $(call tf_output,custom_image_configured,v4.5.2-enhanced)
 
 # Docker images from Terraform (deployed versions)
 IMG_ENT_DEPLOYED := $(call tf_output,enterprise_image_deployed,)
 IMG_COM_DEPLOYED := $(call tf_output,community_image_deployed,)
+IMG_CUSTOM_DEPLOYED := $(call tf_output,custom_image_deployed,)
 
 # Community Standalone Service (New)
 SERVICE_COMMUNITY_STANDALONE := $(call tf_output,formio_community_standalone_service_name,formio-community-dev)
@@ -62,6 +65,15 @@ SERVICE_COMMUNITY_STANDALONE := $(call tf_output,formio_community_standalone_ser
 # Default images for deployment (use configured unless overridden)
 IMG_ENT ?= $(IMG_ENT_CONFIGURED)
 IMG_COM ?= $(IMG_COM_CONFIGURED)
+IMG_CUSTOM ?= $(IMG_CUSTOM_CONFIGURED)
+
+# Docker registry configuration
+DOCKER_REGISTRY := $(REGION)-docker.pkg.dev
+DOCKER_REPO := $(PROJECT_ID)/formio-custom/formio
+
+# Custom image tag (can be overridden)
+CUSTOM_TAG ?= v4.5.2-enhanced-$(shell date +%Y%m%d-%H%M%S)
+FULL_CUSTOM_IMAGE := $(DOCKER_REGISTRY)/$(DOCKER_REPO):$(CUSTOM_TAG)
 
 # Database names from Terraform
 DB_ENT := $(call tf_output,enterprise_database_name,formio_enterprise)
@@ -84,7 +96,7 @@ help: ## Show this help message
 	@grep -E '^(init|plan|apply|destroy|check|security|format|lint|test):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 	@echo ""
 	@echo "Application Deployment (gcloud):"
-	@grep -E '^(deploy-|update-|traffic-):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
+	@grep -E '^(deploy-|update-|traffic-|docker-):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 	@echo ""
 	@echo "Monitoring & Operations:"
 	@grep -E '^(status|logs-|health-|show-|atlas-):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
@@ -92,6 +104,9 @@ help: ## Show this help message
 	@echo "Examples:"
 	@echo "  make deploy-ent                  # Deploy enterprise using configured version"
 	@echo "  make deploy-ent IMG=image:9.5.1  # Deploy specific version"
+	@echo "  make deploy-custom               # Deploy custom enhanced edition"
+	@echo "  make deploy-custom-local         # Build and deploy custom locally"
+	@echo "  make docker-build-push           # Build and push Docker image"
 	@echo "  make show-versions               # Show configured vs deployed versions"
 
 # =============================================================================
@@ -439,6 +454,69 @@ clean-all: clean ## Deep clean including Terraform state (destructive!)
 	else \
 		echo "Cleanup cancelled"; \
 	fi
+
+# =============================================================================
+# CUSTOM FORM.IO DEPLOYMENT
+# =============================================================================
+
+deploy-custom: validate-deployment ## Deploy Custom Enhanced edition
+	@echo "--> Deploying Form.io Custom Enhanced edition..."
+	@echo "Service: $(SERVICE_CUSTOM)"
+	@echo "Image: $(FULL_CUSTOM_IMAGE)"
+	@if [ -z "$(FULL_CUSTOM_IMAGE)" ]; then \
+		echo "Error: Full custom image not defined"; \
+		exit 1; \
+	fi
+	@gcloud run deploy $(SERVICE_CUSTOM) \
+		--image=$(FULL_CUSTOM_IMAGE) \
+		--region=$(REGION) \
+		--platform=managed \
+		--allow-unauthenticated \
+		--max-instances=10 \
+		--timeout=300 \
+		--memory=1Gi \
+		--cpu=1 \
+		--quiet
+
+deploy-custom-local: ## Build and deploy custom edition locally
+	@echo "--> Building custom Docker image locally..."
+	@echo "Image tag: $(CUSTOM_TAG)"
+	@echo "Full image: $(FULL_CUSTOM_IMAGE)"
+
+	# Build the Docker image
+	@docker build -t $(CUSTOM_TAG) -f formio/Dockerfile ../formio
+	@docker tag $(CUSTOM_TAG) $(FULL_CUSTOM_IMAGE)
+
+	# Authenticate and push
+	@gcloud auth configure-docker $(DOCKER_REGISTRY)
+	@docker push $(FULL_CUSTOM_IMAGE)
+
+	# Deploy
+	@$(MAKE) deploy-custom
+
+# =============================================================================
+# DOCKER MANAGEMENT
+# =============================================================================
+
+docker-auth: ## Authenticate with Docker registry
+	@echo "--> Authenticating with Docker registry..."
+	@gcloud auth configure-docker $(DOCKER_REGISTRY)
+
+docker-build: ## Build custom Docker image locally
+	@echo "--> Building custom Docker image..."
+	@echo "Image tag: $(CUSTOM_TAG)"
+	@docker build -t $(CUSTOM_TAG) -f formio/Dockerfile ../formio
+	@docker tag $(CUSTOM_TAG) $(FULL_CUSTOM_IMAGE)
+
+docker-push: ## Push custom Docker image to registry
+	@echo "--> Pushing Docker image to registry..."
+	@docker push $(FULL_CUSTOM_IMAGE)
+
+docker-build-push: docker-build docker-push ## Build and push custom Docker image
+
+docker-clean: ## Clean up local Docker images
+	@echo "--> Cleaning up local Docker images..."
+	@docker images | grep "$(DOCKER_REPO)" | awk '{print $$3}' | xargs -r docker rmi -f
 
 # =============================================================================
 # DEFAULT TARGET
