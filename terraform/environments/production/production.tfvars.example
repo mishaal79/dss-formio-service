@@ -1,0 +1,25 @@
+# Terraform Variables: Production Environment
+# Copy this file to production.tfvars and fill in actual values
+# DO NOT commit production.tfvars to version control!
+
+project_id      = "your-gcp-project-id"
+region          = "us-central1"
+container_image = "gcr.io/your-gcp-project-id/formio:latest"
+
+# CORS origins (Cloudflare Pages)
+allowed_origins = [
+  "https://forms.qrius.app",
+  "https://tokenized-forms.pages.dev",
+]
+
+# Custom domains (must own these domains)
+custom_domains = [
+  "api.qrius.app",
+]
+
+# Secrets (use Secret Manager or environment variables)
+jwt_secret    = "CHANGE-THIS-IN-PRODUCTION"
+db_secret     = "CHANGE-THIS-IN-PRODUCTION"
+mongo_url     = "mongodb+srv://user:password@cluster.mongodb.net/formioapp"
+mongo_db_name = "formioapp"
+redis_host    = "your-redis-instance.c.gcp.cloud.google.com"

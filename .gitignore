@@ -17,6 +17,7 @@
 
 # Secret files and directories
 secrets/
+!terraform/modules/secrets/
 .secret
 *.key
 *.pem
