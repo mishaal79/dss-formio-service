@@ -272,116 +272,103 @@ resource "google_artifact_registry_repository" "formio_custom" {
 # CLOUD RUN SERVICE
 # =============================================================================
 
-resource "google_cloud_run_service" "formio_custom" {
-  provider     = google-beta
+resource "google_cloud_run_v2_service" "formio_custom" {
   project      = var.project_id
   location     = var.region
   name         = local.service_name_full
   description  = "Form.io Custom Enhanced Edition with file upload optimizations"
 
   template {
-    spec {
-      containers {
-        # Use custom image from Google Container Registry (GCR)
-        # Built by GitHub Actions workflow (.github/workflows/build-formio-custom.yml)
-        # Image tags: {version} (immutable), {major}.{minor} (mutable), {major} (mutable), latest
-        image = "gcr.io/${var.project_id}/formio-custom:${var.custom_image_tag}"
+    service_account = google_service_account.formio_custom.email
+    timeout         = "${var.request_timeout}s"
+    max_instance_request_concurrency = var.container_concurrency
 
-        # Environment variables from filtered list
-        dynamic "env" {
-          for_each = local.filtered_env_vars
-          content {
-            name = env.value.name
-            value = env.value.value
+    scaling {
+      min_instance_count = var.min_instance_count
+      max_instance_count = var.max_instance_count
+    }
 
-            dynamic "value_source" {
-              for_each = env.value.value_source != null ? [env.value.value_source] : []
-              content {
-                secret_key_ref {
-                  secret = value_source.value.secret_key_ref.secret
-                }
+    containers {
+      name  = "formio-custom"
+      # Use custom image from Google Container Registry (GCR)
+      # Built by GitHub Actions workflow (.github/workflows/build-formio-custom.yml)
+      # Image tags: {version} (immutable), {major}.{minor} (mutable), {major} (mutable), latest
+      image = "gcr.io/${var.project_id}/formio-custom:${var.custom_image_tag}"
+
+      ports {
+        name           = "http1"
+        container_port = local.container_port
+      }
+
+      # Environment variables from filtered list
+      dynamic "env" {
+        for_each = local.filtered_env_vars
+        content {
+          name = env.value.name
+          value = env.value.value
+
+          dynamic "value_source" {
+            for_each = env.value.value_source != null ? [env.value.value_source] : []
+            content {
+              secret_key_ref {
+                secret  = value_source.value.secret_key_ref.secret
+                version = value_source.value.secret_key_ref.version
               }
             }
           }
         }
-
-        # Resource limits and requests
-        resources {
-          limits = {
-            cpu    = var.cpu_limit
-            memory = var.memory_limit
-          }
-          requests = {
-            cpu    = var.cpu_request
-            memory = var.memory_request
-          }
-        }
-
-        # Health check configuration
-        startup_probe {
-          http_get {
-            path = "/health"
-            port = local.container_port
-          }
-          failure_threshold     = 3
-          initial_delay_seconds = 10
-          period_seconds        = 5
-          timeout_seconds       = 5
-        }
-
-        liveness_probe {
-          http_get {
-            path = "/health"
-            port = local.container_port
-          }
-          failure_threshold = 3
-          period_seconds    = 10
-          timeout_seconds   = 5
-        }
-
-        # Security context
-        security_context {
-          run_as_non_root = true
-          run_as_user     = 1001
-        }
       }
 
-      # Container concurrency and scaling
-      container_concurrency = var.container_concurrency
-      timeout_seconds       = var.request_timeout
+      # Resource limits (v2 only supports limits, not requests)
+      resources {
+        limits = {
+          cpu    = var.cpu_limit
+          memory = var.memory_limit
+        }
+        startup_cpu_boost = true
+      }
 
-      # Cloud Run service configuration
-      service_account_name = google_service_account.formio_custom.email
+      # Health check configuration
+      startup_probe {
+        http_get {
+          path = "/health"
+          port = local.container_port
+        }
+        failure_threshold     = 3
+        initial_delay_seconds = 10
+        period_seconds        = 5
+        timeout_seconds       = 5
+      }
+
+      liveness_probe {
+        http_get {
+          path = "/health"
+          port = local.container_port
+        }
+        failure_threshold = 3
+        period_seconds    = 10
+        timeout_seconds   = 5
+      }
     }
+  }
 
-    # Traffic configuration
-    traffic {
-      percent         = 100
-      latest_revision = true
-    }
-
-    # Scaling configuration
-    max_instance_count = var.max_instance_count
-    min_instance_count = var.min_instance_count
+  # Traffic configuration
+  traffic {
+    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
+    percent = 100
   }
 
   # Traffic split for blue-green deployments (optional)
   dynamic "traffic" {
     for_each = var.enable_blue_green ? [1] : []
     content {
-      percent         = var.traffic_percent_new
-      latest_revision = false
-      revision_name   = var.new_revision_name
+      type     = "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION"
+      revision = traffic.value.revision_name
+      percent  = traffic.value.traffic_percent_new
     }
   }
 
   labels = local.service_labels
-
-  # IAM configuration
-  traffic_statuses {
-    type   = "TRAFFIC_TARGET_ALLOCATION"
-    status = "SERVING"
-  }
 }
 
 # =============================================================================
@@ -455,30 +442,19 @@ resource "google_compute_backend_service" "formio_custom" {
     max_ttl     = var.cache_max_ttl
     client_ttl  = var.cache_client_ttl
 
-    negative_caching {
-      enabled = true
-      ttl     = 300  # Cache 404s for 5 minutes
+    negative_caching        = true
+    negative_caching_policy {
+      code = 404
+      ttl  = 300  # Cache 404s for 5 minutes
     }
 
     # Cache key configuration
     cache_key_policy {
-      include_protocol           = true
-      include_host               = true
-      include_query_string       = true
-      query_string_whitelist     = var.cache_query_whitelist
-      include_http_headers       = var.cache_headers
-      include_named_http_headers = var.cache_named_headers
-    }
-
-    # Bypass cache for specific paths
-    bypass_cache_on_request_headers = var.bypass_cache_headers
-  }
-
-  # Cloud CDN negative caching configuration
-  cdn_policy {
-    negative_caching {
-      enabled = true
-      ttl     = 300
+      include_protocol       = true
+      include_host           = true
+      include_query_string   = true
+      query_string_whitelist = var.cache_query_whitelist
+      include_http_headers   = var.cache_headers
     }
   }
 
@@ -490,19 +466,15 @@ resource "google_compute_backend_service" "formio_custom" {
 
   # Instance group or NEG for Cloud Run
   backend {
-    group = google_compute_network_endpoint_group.formio_custom.id
+    group = google_compute_region_network_endpoint_group.formio_custom.id
   }
 
   # IAP configuration for additional security
   iap {
-    enabled = var.iap_enabled
-    oauth2_client_info {
-      client_id     = var.iap_client_id
-      client_secret = var.iap_client_secret
-    }
+    enabled              = var.iap_enabled
+    oauth2_client_id     = var.iap_enabled ? var.iap_client_id : ""
+    oauth2_client_secret = var.iap_enabled ? var.iap_client_secret : ""
   }
-
-  labels = local.service_labels
 }
 
 # NEG for Cloud Run
@@ -513,7 +485,7 @@ resource "google_compute_region_network_endpoint_group" "formio_custom" {
   region                = var.region
 
   cloud_run {
-    service = google_cloud_run_service.formio_custom.name
+    service = google_cloud_run_v2_service.formio_custom.name
   }
 }
 
@@ -522,8 +494,8 @@ resource "google_compute_health_check" "formio_custom" {
   project = var.project_id
   name    = "${local.service_name_full}-hc"
 
-  check_interval_sec = 10
-  timeout_sec        = 5
+  check_interval_sec  = 10
+  timeout_sec         = 5
   healthy_threshold   = 2
   unhealthy_threshold = 3
 
@@ -534,7 +506,7 @@ resource "google_compute_health_check" "formio_custom" {
   }
 
   log_config {
-    enabled = true
+    enable = true
   }
 }
 
@@ -550,7 +522,7 @@ resource "google_dns_record_set" "formio_custom" {
   name         = "${var.dns_name}.${var.dns_managed_zone}."
   type         = "CNAME"
   ttl          = 300
-  rrdatas      = [google_cloud_run_service.formio_custom.status[0].url]
+  rrdatas      = [google_cloud_run_v2_service.formio_custom.uri]
 }
 
 # =============================================================================

@@ -4,12 +4,12 @@
 
 output "service_url" {
   description = "Form.io Custom Service URL"
-  value       = google_cloud_run_service.formio_custom.status[0].url
+  value       = google_cloud_run_v2_service.formio_custom.uri
 }
 
 output "service_name" {
   description = "Cloud Run service name"
-  value       = google_cloud_run_service.formio_custom.name
+  value       = google_cloud_run_v2_service.formio_custom.name
 }
 
 output "backend_service_id" {
@@ -54,12 +54,12 @@ output "docker_image_full" {
 
 output "health_check_url" {
   description = "Health check endpoint URL"
-  value       = "${google_cloud_run_service.formio_custom.status[0].url}/health"
+  value       = "${google_cloud_run_v2_service.formio_custom.uri}/health"
 }
 
 output "latest_revision" {
   description = "Latest deployed revision"
-  value       = google_cloud_run_service.formio_custom.status[0].latest_ready_revision_name
+  value       = google_cloud_run_v2_service.formio_custom.latest_ready_revision
 }
 
 output "container_port" {
@@ -152,16 +152,16 @@ output "deployment_commands" {
     )
 
     deploy_image = format("gcloud run services update %s --region=%s --image=%s",
-      google_cloud_run_service.formio_custom.name,
+      google_cloud_run_v2_service.formio_custom.name,
       var.region,
       "${var.region}-docker.pkg.dev/${var.project_id}/formio-custom/formio:${var.custom_image_tag}"
     )
 
     view_logs = format("gcloud logs tail 'resource.type=cloud_run_revision AND resource.labels.service_name=%s'",
-      google_cloud_run_service.formio_custom.name
+      google_cloud_run_v2_service.formio_custom.name
     )
 
-    test_health = "curl -f ${google_cloud_run_service.formio_custom.status[0].url}/health"
+    test_health = "curl -f ${google_cloud_run_v2_service.formio_custom.uri}/health"
   }
 }
 
