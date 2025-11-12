@@ -220,7 +220,7 @@ locals {
     },
     # Token keys from Secret Manager (Form.io expects these exact names)
     {
-      name  = "TOKEN_PRIVATE_KEY"
+      name  = "TOKEN_PRIVATE_KEY_V1"
       value = null
       value_source = {
         secret_key_ref = {
@@ -230,7 +230,7 @@ locals {
       }
     },
     {
-      name  = "TOKEN_PUBLIC_KEY"
+      name  = "TOKEN_PUBLIC_KEY_V1"
       value = null
       value_source = {
         secret_key_ref = {
