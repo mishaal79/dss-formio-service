@@ -36,7 +36,14 @@ variable "labels" {
 # =============================================================================
 
 variable "custom_image_tag" {
-  description = "Custom Docker image tag for Form.io enhanced edition"
+  description = <<-EOT
+    Custom Docker image tag for Form.io enhanced edition.
+    Recommended formats for CI/CD:
+    - Git SHA: "git-abc1234" (automatic correlation with code)
+    - Semantic version: "v1.2.3" (for releases)
+    - Timestamp: "20251113-abc1234" (for frequent deployments)
+    - "latest" (for dev environments, not recommended for prod)
+  EOT
   type        = string
   default     = "latest"
 }
@@ -103,6 +110,16 @@ variable "formio_root_email" {
 
 variable "formio_root_password_secret_id" {
   description = "Secret Manager secret ID for Form.io root password"
+  type        = string
+}
+
+variable "token_private_key_secret_id" {
+  description = "Secret Manager secret ID for JWT private key (v1)"
+  type        = string
+}
+
+variable "token_public_key_secret_id" {
+  description = "Secret Manager secret ID for JWT public key (v1)"
   type        = string
 }
 

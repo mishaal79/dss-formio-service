@@ -1,0 +1,100 @@
+[0m[1mmodule.formio_custom_service.data.google_secret_manager_secret_version.formio_db_secret: Reading...[0m[0m
+[0m[1mmodule.formio_custom_service.data.google_secret_manager_secret_version.formio_root_password: Reading...[0m[0m
+[0m[1mmodule.formio_custom_service.data.google_secret_manager_secret_version.mongodb_connection_string: Reading...[0m[0m
+[0m[1mmodule.formio_custom_service.data.google_secret_manager_secret_version.formio_jwt_secret: Reading...[0m[0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+
+Terraform planned the following actions, but then encountered a problem:
+
+[1m  # module.formio_custom_service.google_artifact_registry_repository.formio_custom[0m will be created
+[0m  [32m+[0m[0m resource "google_artifact_registry_repository" "formio_custom" {
+      [32m+[0m[0m create_time      = (known after apply)
+      [32m+[0m[0m description      = "Form.io custom enhanced edition Docker images"
+      [32m+[0m[0m effective_labels = {
+          [32m+[0m[0m "application"         = "formio-custom"
+          [32m+[0m[0m "application-id"      = "formio-custom-service"
+          [32m+[0m[0m "backup-policy"       = "daily"
+          [32m+[0m[0m "compliance-scope"    = "pci-dss"
+          [32m+[0m[0m "cost-center"         = "dss-electrical"
+          [32m+[0m[0m "data-classification" = "confidential"
+          [32m+[0m[0m "edition"             = "custom-enhanced"
+          [32m+[0m[0m "environment"         = "dev"
+          [32m+[0m[0m "managed-by"          = "terraform"
+          [32m+[0m[0m "managed_by"          = "terraform"
+          [32m+[0m[0m "owner"               = "platform-team"
+          [32m+[0m[0m "project-type"        = "form-management"
+          [32m+[0m[0m "service"             = "formio-custom"
+          [32m+[0m[0m "version"             = "gcr.io/erlich-dev/formio-custom:7"
+        }
+      [32m+[0m[0m format           = "DOCKER"
+      [32m+[0m[0m id               = (known after apply)
+      [32m+[0m[0m labels           = {
+          [32m+[0m[0m "application"         = "formio-custom"
+          [32m+[0m[0m "application-id"      = "formio-custom-service"
+          [32m+[0m[0m "backup-policy"       = "daily"
+          [32m+[0m[0m "compliance-scope"    = "pci-dss"
+          [32m+[0m[0m "cost-center"         = "dss-electrical"
+          [32m+[0m[0m "data-classification" = "confidential"
+          [32m+[0m[0m "edition"             = "custom-enhanced"
+          [32m+[0m[0m "environment"         = "dev"
+          [32m+[0m[0m "managed-by"          = "terraform"
+          [32m+[0m[0m "managed_by"          = "terraform"
+          [32m+[0m[0m "owner"               = "platform-team"
+          [32m+[0m[0m "project-type"        = "form-management"
+          [32m+[0m[0m "service"             = "formio-custom"
+          [32m+[0m[0m "version"             = "gcr.io/erlich-dev/formio-custom:7"
+        }
+      [32m+[0m[0m location         = "australia-southeast1"
+      [32m+[0m[0m mode             = "STANDARD_REPOSITORY"
+      [32m+[0m[0m name             = (known after apply)
+      [32m+[0m[0m project          = "erlich-dev"
+      [32m+[0m[0m repository_id    = "formio-custom"
+      [32m+[0m[0m terraform_labels = {
+          [32m+[0m[0m "application"         = "formio-custom"
+          [32m+[0m[0m "application-id"      = "formio-custom-service"
+          [32m+[0m[0m "backup-policy"       = "daily"
+          [32m+[0m[0m "compliance-scope"    = "pci-dss"
+          [32m+[0m[0m "cost-center"         = "dss-electrical"
+          [32m+[0m[0m "data-classification" = "confidential"
+          [32m+[0m[0m "edition"             = "custom-enhanced"
+          [32m+[0m[0m "environment"         = "dev"
+          [32m+[0m[0m "managed-by"          = "terraform"
+          [32m+[0m[0m "managed_by"          = "terraform"
+          [32m+[0m[0m "owner"               = "platform-team"
+          [32m+[0m[0m "project-type"        = "form-management"
+          [32m+[0m[0m "service"             = "formio-custom"
+          [32m+[0m[0m "version"             = "gcr.io/erlich-dev/formio-custom:7"
+        }
+      [32m+[0m[0m update_time      = (known after apply)
+
+      [32m+[0m[0m docker_config {
+          [32m+[0m[0m immutable_tags = false
+        }
+    }
+
+[1m  # module.formio_custom_service.google_cloud_run_v2_service.formio_custom[0m will be created
+[0m  [32m+[0m[0m resource "google_cloud_run_v2_service" "formio_custom" {
+      [32m+[0m[0m conditions              = (known after apply)
+      [32m+[0m[0m create_time             = (known after apply)
+      [32m+[0m[0m creator                 = (known after apply)
+      [32m+[0m[0m delete_time             = (known after apply)
+      [32m+[0m[0m description             = "Form.io Custom Enhanced Edition with file upload optimizations"
+      [32m+[0m[0m effective_annotations   = (known after apply)
+      [32m+[0m[0m effective_labels        = {
+          [32m+[0m[0m "application"         = "formio-custom"
+          [32m+[0m[0m "application-id"      = "formio-custom-service"
+          [32m+[0m[0m "backup-policy"       = "daily"
+          [32m+[0m[0m "compliance-scope"    = "pci-dss"
+          [32m+[0m[0m "cost-center"         = "dss-electrical"
+          [32m+[0m[0m "data-classification" = "confidential"
+          [32m+[0m[0m "edition"             = "custom-enhanced"
+          [32m+[0m[0m "environment"         = "dev"
+          [32m+[0m[0m "managed-by"          = "terraform"
+          [32m+[0m[0m "managed_by"          = "terraform"
+          [32m+[0m[0m "owner"               = "platform-team"
+          [32m+[0m[0m "project-type"        = "form-management"
+          [32m+[0m[0m "service"             = "formio-custom"
+          [32m+[0m[0m "version"             = "gcr.io/erlich-dev/formio-custom:7"

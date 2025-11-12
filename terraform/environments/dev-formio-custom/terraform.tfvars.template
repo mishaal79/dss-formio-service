@@ -1,0 +1,101 @@
+# =============================================================================
+# FORM.IO CUSTOM SERVICE - DEV ENVIRONMENT CONFIGURATION TEMPLATE
+# =============================================================================
+# This template shows all available configuration options.
+# Copy to terraform.tfvars and customize for your environment.
+
+# -----------------------------------------------------------------------------
+# REQUIRED: Project and Environment
+# -----------------------------------------------------------------------------
+
+project_id  = "your-gcp-project-id"
+region      = "us-central1"
+environment = "dev"
+
+# -----------------------------------------------------------------------------
+# REQUIRED: Image Configuration
+# -----------------------------------------------------------------------------
+# Recommended tagging strategies for CI/CD:
+#
+# 1. Git SHA (recommended for CI/CD):
+#    custom_image_tag = "git-3b95aa5"
+#    Benefits: Automatic correlation, immutable, traceable
+#
+# 2. Semantic versioning (for releases):
+#    custom_image_tag = "v1.2.3"
+#    Benefits: Clear progression, good for production
+#
+# 3. Timestamp + SHA (for frequent dev):
+#    custom_image_tag = "20251113-3b95aa5"
+#    Benefits: Human-readable order, traceable
+#
+# 4. Latest (not recommended for production):
+#    custom_image_tag = "latest"
+#    Benefits: Always pulls newest, no config changes needed
+#    Drawbacks: Not immutable, hard to rollback
+
+custom_image_tag = "git-3b95aa5"  # Replace with actual Git SHA
+
+# -----------------------------------------------------------------------------
+# REQUIRED: Secrets (Secret Manager secret IDs)
+# -----------------------------------------------------------------------------
+
+mongodb_connection_string_secret_id = "dss-formio-api-mongodb-custom-connection-string-dev"
+formio_jwt_secret_secret_id         = "dss-formio-api-jwt-secret-dev"
+formio_db_secret_secret_id          = "dss-formio-api-db-secret-dev"
+formio_root_password_secret_id      = "dss-formio-api-root-password-dev"
+token_private_key_secret_id         = "dss-formio-api-token-private-key-v1-dev"
+token_public_key_secret_id          = "dss-formio-api-token-public-key-v1-dev"
+
+# -----------------------------------------------------------------------------
+# REQUIRED: Form.io Configuration
+# -----------------------------------------------------------------------------
+
+formio_root_email   = "admin@example.com"
+storage_bucket_name = "your-project-formio-uploads"
+
+# -----------------------------------------------------------------------------
+# OPTIONAL: Cloud Run Scaling
+# -----------------------------------------------------------------------------
+
+min_instance_count = 0   # 0 = scale to zero
+max_instance_count = 10  # Max concurrent instances
+cpu_limit          = "1000m"
+memory_limit       = "512Mi"
+request_timeout    = 300  # seconds
+
+# -----------------------------------------------------------------------------
+# OPTIONAL: Resource Labels
+# -----------------------------------------------------------------------------
+
+labels = {
+  environment = "dev"
+  application = "formio-custom"
+  managed_by  = "terraform"
+}
+
+# -----------------------------------------------------------------------------
+# OPTIONAL: Advanced Configuration
+# -----------------------------------------------------------------------------
+
+# Monitoring
+enable_alerting = false  # Set to true for production
+
+# File Upload Features
+enable_async_gcs_upload   = true
+bullmq_worker_concurrency = 3
+xxhash_enabled            = true
+railway_oriented_uploads  = true
+
+# TUS Uploads
+tus_enabled  = true
+tus_port     = 1080
+tus_max_size = 5368709120  # 5GB
+
+# CORS
+cors_enabled = true
+cors_origin  = "http://localhost:64849,http://localhost:3000"
+
+# Portal
+portal_enabled = true
+debug_enabled  = false

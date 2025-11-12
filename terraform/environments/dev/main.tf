@@ -256,7 +256,7 @@ module "form-web-bff" {
   log_level = "info"
 
   # CORS configuration (allow test app)
-  cors_origin = "http://localhost:64849,https://form-web-client-dev-*.run.app"
+  cors_origin = "http://localhost:64849,https://tokenized-forms.pages.dev,https://*.tokenized-forms.pages.dev"
 
   # Rate limiting (relaxed for dev)
   rate_limit_max       = 1000

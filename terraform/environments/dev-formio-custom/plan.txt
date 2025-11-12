@@ -1,0 +1,761 @@
+[0m[1mmodule.formio_custom_service.data.google_secret_manager_secret_version.formio_db_secret: Reading...[0m[0m
+[0m[1mmodule.formio_custom_service.data.google_secret_manager_secret_version.formio_root_password: Reading...[0m[0m
+[0m[1mmodule.formio_custom_service.data.google_secret_manager_secret_version.mongodb_connection_string: Reading...[0m[0m
+[0m[1mmodule.formio_custom_service.data.google_secret_manager_secret_version.formio_jwt_secret: Reading...[0m[0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+
+Terraform planned the following actions, but then encountered a problem:
+
+[1m  # module.formio_custom_service.google_artifact_registry_repository.formio_custom[0m will be created
+[0m  [32m+[0m[0m resource "google_artifact_registry_repository" "formio_custom" {
+      [32m+[0m[0m create_time      = (known after apply)
+      [32m+[0m[0m description      = "Form.io custom enhanced edition Docker images"
+      [32m+[0m[0m effective_labels = {
+          [32m+[0m[0m "application"         = "formio-custom"
+          [32m+[0m[0m "application-id"      = "formio-custom-service"
+          [32m+[0m[0m "backup-policy"       = "daily"
+          [32m+[0m[0m "compliance-scope"    = "pci-dss"
+          [32m+[0m[0m "cost-center"         = "dss-electrical"
+          [32m+[0m[0m "data-classification" = "confidential"
+          [32m+[0m[0m "edition"             = "custom-enhanced"
+          [32m+[0m[0m "environment"         = "dev"
+          [32m+[0m[0m "managed-by"          = "terraform"
+          [32m+[0m[0m "managed_by"          = "terraform"
+          [32m+[0m[0m "owner"               = "platform-team"
+          [32m+[0m[0m "project-type"        = "form-management"
+          [32m+[0m[0m "service"             = "formio-custom"
+          [32m+[0m[0m "version"             = "gcr.io/erlich-dev/formio-custom:7"
+        }
+      [32m+[0m[0m format           = "DOCKER"
+      [32m+[0m[0m id               = (known after apply)
+      [32m+[0m[0m labels           = {
+          [32m+[0m[0m "application"         = "formio-custom"
+          [32m+[0m[0m "application-id"      = "formio-custom-service"
+          [32m+[0m[0m "backup-policy"       = "daily"
+          [32m+[0m[0m "compliance-scope"    = "pci-dss"
+          [32m+[0m[0m "cost-center"         = "dss-electrical"
+          [32m+[0m[0m "data-classification" = "confidential"
+          [32m+[0m[0m "edition"             = "custom-enhanced"
+          [32m+[0m[0m "environment"         = "dev"
+          [32m+[0m[0m "managed-by"          = "terraform"
+          [32m+[0m[0m "managed_by"          = "terraform"
+          [32m+[0m[0m "owner"               = "platform-team"
+          [32m+[0m[0m "project-type"        = "form-management"
+          [32m+[0m[0m "service"             = "formio-custom"
+          [32m+[0m[0m "version"             = "gcr.io/erlich-dev/formio-custom:7"
+        }
+      [32m+[0m[0m location         = "australia-southeast1"
+      [32m+[0m[0m mode             = "STANDARD_REPOSITORY"
+      [32m+[0m[0m name             = (known after apply)
+      [32m+[0m[0m project          = "erlich-dev"
+      [32m+[0m[0m repository_id    = "formio-custom"
+      [32m+[0m[0m terraform_labels = {
+          [32m+[0m[0m "application"         = "formio-custom"
+          [32m+[0m[0m "application-id"      = "formio-custom-service"
+          [32m+[0m[0m "backup-policy"       = "daily"
+          [32m+[0m[0m "compliance-scope"    = "pci-dss"
+          [32m+[0m[0m "cost-center"         = "dss-electrical"
+          [32m+[0m[0m "data-classification" = "confidential"
+          [32m+[0m[0m "edition"             = "custom-enhanced"
+          [32m+[0m[0m "environment"         = "dev"
+          [32m+[0m[0m "managed-by"          = "terraform"
+          [32m+[0m[0m "managed_by"          = "terraform"
+          [32m+[0m[0m "owner"               = "platform-team"
+          [32m+[0m[0m "project-type"        = "form-management"
+          [32m+[0m[0m "service"             = "formio-custom"
+          [32m+[0m[0m "version"             = "gcr.io/erlich-dev/formio-custom:7"
+        }
+      [32m+[0m[0m update_time      = (known after apply)
+
+      [32m+[0m[0m docker_config {
+          [32m+[0m[0m immutable_tags = false
+        }
+    }
+
+[1m  # module.formio_custom_service.google_cloud_run_v2_service.formio_custom[0m will be created
+[0m  [32m+[0m[0m resource "google_cloud_run_v2_service" "formio_custom" {
+      [32m+[0m[0m conditions              = (known after apply)
+      [32m+[0m[0m create_time             = (known after apply)
+      [32m+[0m[0m creator                 = (known after apply)
+      [32m+[0m[0m delete_time             = (known after apply)
+      [32m+[0m[0m description             = "Form.io Custom Enhanced Edition with file upload optimizations"
+      [32m+[0m[0m effective_annotations   = (known after apply)
+      [32m+[0m[0m effective_labels        = {
+          [32m+[0m[0m "application"         = "formio-custom"
+          [32m+[0m[0m "application-id"      = "formio-custom-service"
+          [32m+[0m[0m "backup-policy"       = "daily"
+          [32m+[0m[0m "compliance-scope"    = "pci-dss"
+          [32m+[0m[0m "cost-center"         = "dss-electrical"
+          [32m+[0m[0m "data-classification" = "confidential"
+          [32m+[0m[0m "edition"             = "custom-enhanced"
+          [32m+[0m[0m "environment"         = "dev"
+          [32m+[0m[0m "managed-by"          = "terraform"
+          [32m+[0m[0m "managed_by"          = "terraform"
+          [32m+[0m[0m "owner"               = "platform-team"
+          [32m+[0m[0m "project-type"        = "form-management"
+          [32m+[0m[0m "service"             = "formio-custom"
+          [32m+[0m[0m "version"             = "gcr.io/erlich-dev/formio-custom:7"
+        }
+      [32m+[0m[0m etag                    = (known after apply)
+      [32m+[0m[0m expire_time             = (known after apply)
+      [32m+[0m[0m generation              = (known after apply)
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ingress                 = (known after apply)
+      [32m+[0m[0m labels                  = {
+          [32m+[0m[0m "application"         = "formio-custom"
+          [32m+[0m[0m "application-id"      = "formio-custom-service"
+          [32m+[0m[0m "backup-policy"       = "daily"
+          [32m+[0m[0m "compliance-scope"    = "pci-dss"
+          [32m+[0m[0m "cost-center"         = "dss-electrical"
+          [32m+[0m[0m "data-classification" = "confidential"
+          [32m+[0m[0m "edition"             = "custom-enhanced"
+          [32m+[0m[0m "environment"         = "dev"
+          [32m+[0m[0m "managed-by"          = "terraform"
+          [32m+[0m[0m "managed_by"          = "terraform"
+          [32m+[0m[0m "owner"               = "platform-team"
+          [32m+[0m[0m "project-type"        = "form-management"
+          [32m+[0m[0m "service"             = "formio-custom"
+          [32m+[0m[0m "version"             = "gcr.io/erlich-dev/formio-custom:7"
+        }
+      [32m+[0m[0m last_modifier           = (known after apply)
+      [32m+[0m[0m latest_created_revision = (known after apply)
+      [32m+[0m[0m latest_ready_revision   = (known after apply)
+      [32m+[0m[0m launch_stage            = (known after apply)
+      [32m+[0m[0m location                = "australia-southeast1"
+      [32m+[0m[0m name                    = "formio-custom-dev"
+      [32m+[0m[0m observed_generation     = (known after apply)
+      [32m+[0m[0m project                 = "erlich-dev"
+      [32m+[0m[0m reconciling             = (known after apply)
+      [32m+[0m[0m terminal_condition      = (known after apply)
+      [32m+[0m[0m terraform_labels        = {
+          [32m+[0m[0m "application"         = "formio-custom"
+          [32m+[0m[0m "application-id"      = "formio-custom-service"
+          [32m+[0m[0m "backup-policy"       = "daily"
+          [32m+[0m[0m "compliance-scope"    = "pci-dss"
+          [32m+[0m[0m "cost-center"         = "dss-electrical"
+          [32m+[0m[0m "data-classification" = "confidential"
+          [32m+[0m[0m "edition"             = "custom-enhanced"
+          [32m+[0m[0m "environment"         = "dev"
+          [32m+[0m[0m "managed-by"          = "terraform"
+          [32m+[0m[0m "managed_by"          = "terraform"
+          [32m+[0m[0m "owner"               = "platform-team"
+          [32m+[0m[0m "project-type"        = "form-management"
+          [32m+[0m[0m "service"             = "formio-custom"
+          [32m+[0m[0m "version"             = "gcr.io/erlich-dev/formio-custom:7"
+        }
+      [32m+[0m[0m traffic_statuses        = (known after apply)
+      [32m+[0m[0m uid                     = (known after apply)
+      [32m+[0m[0m update_time             = (known after apply)
+      [32m+[0m[0m uri                     = (known after apply)
+
+      [32m+[0m[0m template {
+          [32m+[0m[0m max_instance_request_concurrency = 80
+          [32m+[0m[0m service_account                  = (known after apply)
+          [32m+[0m[0m timeout                          = "300s"
+
+          [32m+[0m[0m containers {
+              [32m+[0m[0m image = "gcr.io/erlich-dev/formio-custom:gcr.io/erlich-dev/formio-custom:7"
+              [32m+[0m[0m name  = "formio-custom"
+
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name = "MONGO"
+
+                  [32m+[0m[0m value_source {
+                      [32m+[0m[0m secret_key_ref {
+                          [32m+[0m[0m secret  = "dss-formio-api-mongodb-custom-connection-string-dev"
+                          [32m+[0m[0m version = "latest"
+                        }
+                    }
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name = "JWT_SECRET"
+
+                  [32m+[0m[0m value_source {
+                      [32m+[0m[0m secret_key_ref {
+                          [32m+[0m[0m secret  = "dss-formio-api-jwt-secret-dev"
+                          [32m+[0m[0m version = "latest"
+                        }
+                    }
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name = "DB_SECRET"
+
+                  [32m+[0m[0m value_source {
+                      [32m+[0m[0m secret_key_ref {
+                          [32m+[0m[0m secret  = "dss-formio-api-db-secret-dev"
+                          [32m+[0m[0m version = "latest"
+                        }
+                    }
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "PROTOCOL"
+                  [32m+[0m[0m value = "https"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "HOST"
+                  [32m+[0m[0m value = "0.0.0.0"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "PORTAL_ENABLED"
+                  [32m+[0m[0m value = "1"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "ROOT_EMAIL"
+                  [32m+[0m[0m value = "admin@erlich.dev"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name = "ROOT_PASSWORD"
+
+                  [32m+[0m[0m value_source {
+                      [32m+[0m[0m secret_key_ref {
+                          [32m+[0m[0m secret  = "dss-formio-api-root-password-dev"
+                          [32m+[0m[0m version = "latest"
+                        }
+                    }
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "XXHASH_ENABLED"
+                  [32m+[0m[0m value = "true"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "RAILWAY_ORIENTED_UPLOADS"
+                  [32m+[0m[0m value = "true"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "FORMIO_FILES_SERVER"
+                  [32m+[0m[0m value = "s3"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "FORMIO_S3_SERVER"
+                  [32m+[0m[0m value = "https://storage.googleapis.com"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "FORMIO_S3_BUCKET"
+                  [32m+[0m[0m value = "erlich-dev-formio-uploads"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "GCS_PROJECT_ID"
+                  [32m+[0m[0m value = "erlich-dev"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "NODE_ENV"
+                  [32m+[0m[0m value = "development"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "DEBUG"
+                    [90m# (1 unchanged attribute hidden)[0m[0m
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "TUS_ENABLED"
+                  [32m+[0m[0m value = "true"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "TUS_PORT"
+                  [32m+[0m[0m value = "1080"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "TUS_MAX_SIZE"
+                  [32m+[0m[0m value = "5368709120"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "EMAIL_TYPE"
+                  [32m+[0m[0m value = "smtp"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "EMAIL_HOST"
+                  [32m+[0m[0m value = "smtp.gmail.com"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "EMAIL_PORT"
+                  [32m+[0m[0m value = "587"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "EMAIL_SECURE"
+                  [32m+[0m[0m value = "true"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "EMAIL_USER"
+                    [90m# (1 unchanged attribute hidden)[0m[0m
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "EMAIL_PASS"
+                    [90m# (1 unchanged attribute hidden)[0m[0m
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "CORS_ENABLED"
+                  [32m+[0m[0m value = "true"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name  = "CORS_ORIGIN"
+                  [32m+[0m[0m value = "*"
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name = "TOKEN_PRIVATE_KEY_V1"
+
+                  [32m+[0m[0m value_source {
+                      [32m+[0m[0m secret_key_ref {
+                          [32m+[0m[0m secret  = "dss-formio-api-token-private-key-v1-dev"
+                          [32m+[0m[0m version = "latest"
+                        }
+                    }
+                }
+              [32m+[0m[0m env {
+                  [32m+[0m[0m name = "TOKEN_PUBLIC_KEY_V1"
+
+                  [32m+[0m[0m value_source {
+                      [32m+[0m[0m secret_key_ref {
+                          [32m+[0m[0m secret  = "dss-formio-api-token-public-key-v1-dev"
+                          [32m+[0m[0m version = "latest"
+                        }
+                    }
+                }
+
+              [32m+[0m[0m liveness_probe {
+                  [32m+[0m[0m failure_threshold     = 3
+                  [32m+[0m[0m initial_delay_seconds = 0
+                  [32m+[0m[0m period_seconds        = 10
+                  [32m+[0m[0m timeout_seconds       = 5
+
+                  [32m+[0m[0m http_get {
+                      [32m+[0m[0m path = "/health"
+                      [32m+[0m[0m port = 3001
+                    }
+                }
+
+              [32m+[0m[0m ports {
+                  [32m+[0m[0m container_port = 3001
+                  [32m+[0m[0m name           = "http1"
+                }
+
+              [32m+[0m[0m resources {
+                  [32m+[0m[0m limits            = {
+                      [32m+[0m[0m "cpu"    = "1000m"
+                      [32m+[0m[0m "memory" = "512Mi"
+                    }
+                  [32m+[0m[0m startup_cpu_boost = true
+                }
+
+              [32m+[0m[0m startup_probe {
+                  [32m+[0m[0m failure_threshold     = 3
+                  [32m+[0m[0m initial_delay_seconds = 10
+                  [32m+[0m[0m period_seconds        = 5
+                  [32m+[0m[0m timeout_seconds       = 5
+
+                  [32m+[0m[0m http_get {
+                      [32m+[0m[0m path = "/health"
+                      [32m+[0m[0m port = 3001
+                    }
+                }
+            }
+
+          [32m+[0m[0m scaling {
+              [32m+[0m[0m max_instance_count = 10
+              [32m+[0m[0m min_instance_count = 0
+            }
+        }
+
+      [32m+[0m[0m traffic {
+          [32m+[0m[0m percent = 100
+          [32m+[0m[0m type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
+        }
+    }
+
+[1m  # module.formio_custom_service.google_compute_backend_service.formio_custom[0m will be created
+[0m  [32m+[0m[0m resource "google_compute_backend_service" "formio_custom" {
+      [32m+[0m[0m connection_draining_timeout_sec = 300
+      [32m+[0m[0m creation_timestamp              = (known after apply)
+      [32m+[0m[0m enable_cdn                      = true
+      [32m+[0m[0m fingerprint                     = (known after apply)
+      [32m+[0m[0m generated_id                    = (known after apply)
+      [32m+[0m[0m health_checks                   = (known after apply)
+      [32m+[0m[0m id                              = (known after apply)
+      [32m+[0m[0m load_balancing_scheme           = "EXTERNAL"
+      [32m+[0m[0m name                            = "formio-custom-backend-dev"
+      [32m+[0m[0m port_name                       = "http"
+      [32m+[0m[0m project                         = "erlich-dev"
+      [32m+[0m[0m protocol                        = "HTTP"
+      [32m+[0m[0m self_link                       = (known after apply)
+      [32m+[0m[0m session_affinity                = (known after apply)
+      [32m+[0m[0m timeout_sec                     = 300
+
+      [32m+[0m[0m backend {
+          [32m+[0m[0m balancing_mode               = "UTILIZATION"
+          [32m+[0m[0m capacity_scaler              = 1
+          [32m+[0m[0m group                        = (known after apply)
+          [32m+[0m[0m max_connections              = (known after apply)
+          [32m+[0m[0m max_connections_per_endpoint = (known after apply)
+          [32m+[0m[0m max_connections_per_instance = (known after apply)
+          [32m+[0m[0m max_rate                     = (known after apply)
+          [32m+[0m[0m max_rate_per_endpoint        = (known after apply)
+          [32m+[0m[0m max_rate_per_instance        = (known after apply)
+          [32m+[0m[0m max_utilization              = (known after apply)
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [32m+[0m[0m cdn_policy {
+          [32m+[0m[0m cache_mode                   = "CACHE_ALL_STATIC"
+          [32m+[0m[0m client_ttl                   = 1800
+          [32m+[0m[0m default_ttl                  = 3600
+          [32m+[0m[0m max_ttl                      = 86400
+          [32m+[0m[0m negative_caching             = true
+          [32m+[0m[0m serve_while_stale            = (known after apply)
+          [32m+[0m[0m signed_url_cache_max_age_sec = 3600
+
+          [32m+[0m[0m cache_key_policy {
+              [32m+[0m[0m include_host           = true
+              [32m+[0m[0m include_http_headers   = [
+                  [32m+[0m[0m "Authorization",
+                  [32m+[0m[0m "Cookie",
+                ]
+              [32m+[0m[0m include_protocol       = true
+              [32m+[0m[0m include_query_string   = true
+              [32m+[0m[0m query_string_whitelist = [
+                  [32m+[0m[0m "locale",
+                  [32m+[0m[0m "v",
+                  [32m+[0m[0m "version",
+                ]
+            }
+
+          [32m+[0m[0m negative_caching_policy {
+              [32m+[0m[0m code = 404
+              [32m+[0m[0m ttl  = 300
+            }
+        }
+
+      [32m+[0m[0m log_config {
+          [32m+[0m[0m enable      = true
+          [32m+[0m[0m sample_rate = 0.1
+        }
+    }
+
+[1m  # module.formio_custom_service.google_compute_health_check.formio_custom[0m will be created
+[0m  [32m+[0m[0m resource "google_compute_health_check" "formio_custom" {
+      [32m+[0m[0m check_interval_sec  = 10
+      [32m+[0m[0m creation_timestamp  = (known after apply)
+      [32m+[0m[0m healthy_threshold   = 2
+      [32m+[0m[0m id                  = (known after apply)
+      [32m+[0m[0m name                = "formio-custom-dev-hc"
+      [32m+[0m[0m project             = "erlich-dev"
+      [32m+[0m[0m self_link           = (known after apply)
+      [32m+[0m[0m timeout_sec         = 5
+      [32m+[0m[0m type                = (known after apply)
+      [32m+[0m[0m unhealthy_threshold = 3
+
+      [32m+[0m[0m http_health_check {
+          [32m+[0m[0m port         = 3001
+          [32m+[0m[0m proxy_header = "NONE"
+          [32m+[0m[0m request_path = "/health"
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [32m+[0m[0m log_config {
+          [32m+[0m[0m enable = true
+        }
+    }
+
+[1m  # module.formio_custom_service.google_compute_region_network_endpoint_group.formio_custom[0m will be created
+[0m  [32m+[0m[0m resource "google_compute_region_network_endpoint_group" "formio_custom" {
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m name                  = "formio-custom-dev-neg"
+      [32m+[0m[0m network_endpoint_type = "SERVERLESS"
+      [32m+[0m[0m project               = "erlich-dev"
+      [32m+[0m[0m region                = "australia-southeast1"
+      [32m+[0m[0m self_link             = (known after apply)
+
+      [32m+[0m[0m cloud_run {
+          [32m+[0m[0m service = "formio-custom-dev"
+        }
+    }
+
+[1m  # module.formio_custom_service.google_monitoring_alert_policy.formio_custom_error_rate[0][0m will be created
+[0m  [32m+[0m[0m resource "google_monitoring_alert_policy" "formio_custom_error_rate" {
+      [32m+[0m[0m combiner              = "OR"
+      [32m+[0m[0m creation_record       = (known after apply)
+      [32m+[0m[0m display_name          = "Form.io Custom High Error Rate"
+      [32m+[0m[0m enabled               = true
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m name                  = (known after apply)
+      [32m+[0m[0m notification_channels = []
+      [32m+[0m[0m project               = "erlich-dev"
+
+      [32m+[0m[0m conditions {
+          [32m+[0m[0m display_name = "Error rate > 5%"
+          [32m+[0m[0m name         = (known after apply)
+
+          [32m+[0m[0m condition_threshold {
+              [32m+[0m[0m comparison      = "COMPARISON_GT"
+              [32m+[0m[0m duration        = "900s"
+              [32m+[0m[0m filter          = "metric.type=\"run.googleapis.com/container/error_count\" resource.type=\"cloud_run_revision\" resource.label.\"service_name\"=\"formio-custom-dev\""
+              [32m+[0m[0m threshold_value = 5
+
+              [32m+[0m[0m aggregations {
+                  [32m+[0m[0m alignment_period     = "300s"
+                  [32m+[0m[0m cross_series_reducer = "REDUCE_PERCENTILE_99"
+                  [32m+[0m[0m per_series_aligner   = "ALIGN_RATE"
+                }
+
+              [32m+[0m[0m trigger {
+                  [32m+[0m[0m count   = 1
+                  [32m+[0m[0m percent = 100
+                }
+            }
+        }
+    }
+
+[1m  # module.formio_custom_service.google_monitoring_alert_policy.formio_custom_latency[0][0m will be created
+[0m  [32m+[0m[0m resource "google_monitoring_alert_policy" "formio_custom_latency" {
+      [32m+[0m[0m combiner              = "OR"
+      [32m+[0m[0m creation_record       = (known after apply)
+      [32m+[0m[0m display_name          = "Form.io Custom High Latency"
+      [32m+[0m[0m enabled               = true
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m name                  = (known after apply)
+      [32m+[0m[0m notification_channels = []
+      [32m+[0m[0m project               = "erlich-dev"
+
+      [32m+[0m[0m conditions {
+          [32m+[0m[0m display_name = "P99 latency > 1000ms"
+          [32m+[0m[0m name         = (known after apply)
+
+          [32m+[0m[0m condition_threshold {
+              [32m+[0m[0m comparison      = "COMPARISON_GT"
+              [32m+[0m[0m duration        = "900s"
+              [32m+[0m[0m filter          = "metric.type=\"run.googleapis.com/container/latencies\" resource.type=\"cloud_run_revision\" resource.label.\"service_name\"=\"formio-custom-dev\""
+              [32m+[0m[0m threshold_value = 1
+
+              [32m+[0m[0m aggregations {
+                  [32m+[0m[0m alignment_period     = "300s"
+                  [32m+[0m[0m cross_series_reducer = "REDUCE_PERCENTILE_99"
+                  [32m+[0m[0m per_series_aligner   = "ALIGN_PERCENTILE_99"
+                }
+
+              [32m+[0m[0m trigger {
+                  [32m+[0m[0m count   = 1
+                  [32m+[0m[0m percent = 100
+                }
+            }
+        }
+    }
+
+[1m  # module.formio_custom_service.google_monitoring_service.formio_custom[0m will be created
+[0m  [32m+[0m[0m resource "google_monitoring_service" "formio_custom" {
+      [32m+[0m[0m display_name = "Form.io Custom Enhanced Service"
+      [32m+[0m[0m id           = (known after apply)
+      [32m+[0m[0m name         = (known after apply)
+      [32m+[0m[0m project      = "erlich-dev"
+      [32m+[0m[0m service_id   = "formio-custom-dev"
+      [32m+[0m[0m telemetry    = (known after apply)
+
+      [32m+[0m[0m basic_service {
+          [32m+[0m[0m service_type = "CLOUD_RUN"
+        }
+    }
+
+[1m  # module.formio_custom_service.google_project_iam_member.formio_custom_roles["roles/cloudtrace.agent"][0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "formio_custom_roles" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = (known after apply)
+      [32m+[0m[0m project = "erlich-dev"
+      [32m+[0m[0m role    = "roles/cloudtrace.agent"
+    }
+
+[1m  # module.formio_custom_service.google_project_iam_member.formio_custom_roles["roles/logging.logWriter"][0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "formio_custom_roles" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = (known after apply)
+      [32m+[0m[0m project = "erlich-dev"
+      [32m+[0m[0m role    = "roles/logging.logWriter"
+    }
+
+[1m  # module.formio_custom_service.google_project_iam_member.formio_custom_roles["roles/monitoring.metricWriter"][0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "formio_custom_roles" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = (known after apply)
+      [32m+[0m[0m project = "erlich-dev"
+      [32m+[0m[0m role    = "roles/monitoring.metricWriter"
+    }
+
+[1m  # module.formio_custom_service.google_project_iam_member.formio_custom_roles["roles/opsconfigviewer"][0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "formio_custom_roles" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = (known after apply)
+      [32m+[0m[0m project = "erlich-dev"
+      [32m+[0m[0m role    = "roles/opsconfigviewer"
+    }
+
+[1m  # module.formio_custom_service.google_project_iam_member.formio_custom_roles["roles/secretmanager.secretAccessor"][0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "formio_custom_roles" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = (known after apply)
+      [32m+[0m[0m project = "erlich-dev"
+      [32m+[0m[0m role    = "roles/secretmanager.secretAccessor"
+    }
+
+[1m  # module.formio_custom_service.google_project_iam_member.formio_custom_roles["roles/storage.objectViewer"][0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "formio_custom_roles" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = (known after apply)
+      [32m+[0m[0m project = "erlich-dev"
+      [32m+[0m[0m role    = "roles/storage.objectViewer"
+    }
+
+[1m  # module.formio_custom_service.google_secret_manager_secret_iam_member.formio_custom_secrets["dss-formio-api-db-secret-dev"][0m will be created
+[0m  [32m+[0m[0m resource "google_secret_manager_secret_iam_member" "formio_custom_secrets" {
+      [32m+[0m[0m etag      = (known after apply)
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m member    = (known after apply)
+      [32m+[0m[0m project   = (known after apply)
+      [32m+[0m[0m role      = "roles/secretmanager.secretAccessor"
+      [32m+[0m[0m secret_id = "dss-formio-api-db-secret-dev"
+    }
+
+[1m  # module.formio_custom_service.google_secret_manager_secret_iam_member.formio_custom_secrets["dss-formio-api-jwt-secret-dev"][0m will be created
+[0m  [32m+[0m[0m resource "google_secret_manager_secret_iam_member" "formio_custom_secrets" {
+      [32m+[0m[0m etag      = (known after apply)
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m member    = (known after apply)
+      [32m+[0m[0m project   = (known after apply)
+      [32m+[0m[0m role      = "roles/secretmanager.secretAccessor"
+      [32m+[0m[0m secret_id = "dss-formio-api-jwt-secret-dev"
+    }
+
+[1m  # module.formio_custom_service.google_secret_manager_secret_iam_member.formio_custom_secrets["dss-formio-api-mongodb-custom-connection-string-dev"][0m will be created
+[0m  [32m+[0m[0m resource "google_secret_manager_secret_iam_member" "formio_custom_secrets" {
+      [32m+[0m[0m etag      = (known after apply)
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m member    = (known after apply)
+      [32m+[0m[0m project   = (known after apply)
+      [32m+[0m[0m role      = "roles/secretmanager.secretAccessor"
+      [32m+[0m[0m secret_id = "dss-formio-api-mongodb-custom-connection-string-dev"
+    }
+
+[1m  # module.formio_custom_service.google_secret_manager_secret_iam_member.formio_custom_secrets["dss-formio-api-root-password-dev"][0m will be created
+[0m  [32m+[0m[0m resource "google_secret_manager_secret_iam_member" "formio_custom_secrets" {
+      [32m+[0m[0m etag      = (known after apply)
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m member    = (known after apply)
+      [32m+[0m[0m project   = (known after apply)
+      [32m+[0m[0m role      = "roles/secretmanager.secretAccessor"
+      [32m+[0m[0m secret_id = "dss-formio-api-root-password-dev"
+    }
+
+[1m  # module.formio_custom_service.google_secret_manager_secret_iam_member.formio_custom_secrets["dss-formio-api-token-private-key-v1-dev"][0m will be created
+[0m  [32m+[0m[0m resource "google_secret_manager_secret_iam_member" "formio_custom_secrets" {
+      [32m+[0m[0m etag      = (known after apply)
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m member    = (known after apply)
+      [32m+[0m[0m project   = (known after apply)
+      [32m+[0m[0m role      = "roles/secretmanager.secretAccessor"
+      [32m+[0m[0m secret_id = "dss-formio-api-token-private-key-v1-dev"
+    }
+
+[1m  # module.formio_custom_service.google_secret_manager_secret_iam_member.formio_custom_secrets["dss-formio-api-token-public-key-v1-dev"][0m will be created
+[0m  [32m+[0m[0m resource "google_secret_manager_secret_iam_member" "formio_custom_secrets" {
+      [32m+[0m[0m etag      = (known after apply)
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m member    = (known after apply)
+      [32m+[0m[0m project   = (known after apply)
+      [32m+[0m[0m role      = "roles/secretmanager.secretAccessor"
+      [32m+[0m[0m secret_id = "dss-formio-api-token-public-key-v1-dev"
+    }
+
+[1m  # module.formio_custom_service.google_service_account.formio_custom[0m will be created
+[0m  [32m+[0m[0m resource "google_service_account" "formio_custom" {
+      [32m+[0m[0m account_id   = "formio-custom-dev"
+      [32m+[0m[0m description  = "Service account for Form.io custom service with enhanced capabilities"
+      [32m+[0m[0m disabled     = false
+      [32m+[0m[0m display_name = "Form.io Custom Enhanced Edition Service Account"
+      [32m+[0m[0m email        = (known after apply)
+      [32m+[0m[0m id           = (known after apply)
+      [32m+[0m[0m member       = (known after apply)
+      [32m+[0m[0m name         = (known after apply)
+      [32m+[0m[0m project      = "erlich-dev"
+      [32m+[0m[0m unique_id    = (known after apply)
+    }
+
+[1mPlan:[0m 21 to add, 0 to change, 0 to destroy.
+[0m
+Changes to Outputs:
+  [32m+[0m[0m backend_service_id    = (known after apply)
+  [32m+[0m[0m configuration         = {
+      [32m+[0m[0m bullmq_worker_concurrency = 3
+      [32m+[0m[0m cache_client_ttl          = 1800
+      [32m+[0m[0m cache_default_ttl         = 3600
+      [32m+[0m[0m cache_max_ttl             = 86400
+      [32m+[0m[0m cdn_enabled               = true
+      [32m+[0m[0m container_concurrency     = 80
+      [32m+[0m[0m cors_enabled              = true
+      [32m+[0m[0m cors_origin               = "*"
+      [32m+[0m[0m cpu_limit                 = "1000m"
+      [32m+[0m[0m cpu_request               = "500m"
+      [32m+[0m[0m debug_enabled             = false
+      [32m+[0m[0m enable_alerting           = true
+      [32m+[0m[0m enable_async_gcs_upload   = true
+      [32m+[0m[0m environment               = "dev"
+      [32m+[0m[0m error_rate_threshold      = 5
+      [32m+[0m[0m iap_enabled               = false
+      [32m+[0m[0m latency_threshold         = 1000
+      [32m+[0m[0m max_instances             = 10
+      [32m+[0m[0m memory_limit              = "512Mi"
+      [32m+[0m[0m memory_request            = "512Mi"
+      [32m+[0m[0m min_instances             = 0
+      [32m+[0m[0m portal_enabled            = true
+      [32m+[0m[0m project_id                = "erlich-dev"
+      [32m+[0m[0m railway_oriented_uploads  = true
+      [32m+[0m[0m region                    = "australia-southeast1"
+      [32m+[0m[0m tus_enabled               = true
+      [32m+[0m[0m tus_max_size              = 5368709120
+      [32m+[0m[0m version                   = "gcr.io/erlich-dev/formio-custom:7"
+      [32m+[0m[0m xxhash_enabled            = true
+    }
+  [32m+[0m[0m deployment_commands   = {
+      [32m+[0m[0m build_and_push = "docker build -t australia-southeast1-docker.pkg.dev/erlich-dev/formio-custom/formio:gcr.io/erlich-dev/formio-custom:7 ./formio && docker push australia-southeast1-docker.pkg.dev/erlich-dev/formio-custom/formio:gcr.io/erlich-dev/formio-custom:7"
+      [32m+[0m[0m deploy_image   = "gcloud run services update formio-custom-dev --region=australia-southeast1 --image=australia-southeast1-docker.pkg.dev/erlich-dev/formio-custom/formio:gcr.io/erlich-dev/formio-custom:7"
+      [32m+[0m[0m test_health    = (known after apply)
+      [32m+[0m[0m view_logs      = "gcloud logs tail 'resource.type=cloud_run_revision AND resource.labels.service_name=formio-custom-dev'"
+    }
+  [32m+[0m[0m health_check_url      = (known after apply)
+  [32m+[0m[0m service_account_email = (known after apply)
+  [32m+[0m[0m service_name          = "formio-custom-dev"
+  [32m+[0m[0m service_url           = (known after apply)
+[31m╷[0m[0m
+[31m│[0m [0m[1m[31mError: [0m[0m[1mError retrieving available secret manager secret versions: googleapi: Error 403: Permission 'secretmanager.versions.get' denied for resource 'projects/erlich-dev/secrets/dss-formio-api-mongodb-custom-connection-string-dev/versions/latest' (or it may not exist).[0m
+[31m│[0m [0m
+[31m│[0m [0m[0m  with module.formio_custom_service.data.google_secret_manager_secret_version.mongodb_connection_string,
+[31m│[0m [0m  on ../../modules/formio-custom-service/main.tf line 9, in data "google_secret_manager_secret_version" "mongodb_connection_string":
+[31m│[0m [0m   9: data "google_secret_manager_secret_version" "mongodb_connection_string" [4m{[0m[0m
+[31m│[0m [0m
+[31m╵[0m[0m
+[31m╷[0m[0m
+[31m│[0m [0m[1m[31mError: [0m[0m[1mError retrieving available secret manager secret versions: googleapi: Error 403: Permission 'secretmanager.versions.get' denied for resource 'projects/erlich-dev/secrets/dss-formio-api-jwt-secret-dev/versions/latest' (or it may not exist).[0m
+[31m│[0m [0m
+[31m│[0m [0m[0m  with module.formio_custom_service.data.google_secret_manager_secret_version.formio_jwt_secret,
+[31m│[0m [0m  on ../../modules/formio-custom-service/main.tf line 15, in data "google_secret_manager_secret_version" "formio_jwt_secret":
+[31m│[0m [0m  15: data "google_secret_manager_secret_version" "formio_jwt_secret" [4m{[0m[0m
+[31m│[0m [0m
+[31m╵[0m[0m
+[31m╷[0m[0m
+[31m│[0m [0m[1m[31mError: [0m[0m[1mError retrieving available secret manager secret versions: googleapi: Error 403: Permission 'secretmanager.versions.get' denied for resource 'projects/erlich-dev/secrets/dss-formio-api-db-secret-dev/versions/latest' (or it may not exist).[0m
+[31m│[0m [0m
+[31m│[0m [0m[0m  with module.formio_custom_service.data.google_secret_manager_secret_version.formio_db_secret,
+[31m│[0m [0m  on ../../modules/formio-custom-service/main.tf line 21, in data "google_secret_manager_secret_version" "formio_db_secret":
+[31m│[0m [0m  21: data "google_secret_manager_secret_version" "formio_db_secret" [4m{[0m[0m
+[31m│[0m [0m
+[31m╵[0m[0m
+[31m╷[0m[0m
+[31m│[0m [0m[1m[31mError: [0m[0m[1mError retrieving available secret manager secret versions: googleapi: Error 403: Permission 'secretmanager.versions.get' denied for resource 'projects/erlich-dev/secrets/dss-formio-api-root-password-dev/versions/latest' (or it may not exist).[0m
+[31m│[0m [0m
+[31m│[0m [0m[0m  with module.formio_custom_service.data.google_secret_manager_secret_version.formio_root_password,
+[31m│[0m [0m  on ../../modules/formio-custom-service/main.tf line 27, in data "google_secret_manager_secret_version" "formio_root_password":
+[31m│[0m [0m  27: data "google_secret_manager_secret_version" "formio_root_password" [4m{[0m[0m
+[31m│[0m [0m
+[31m╵[0m[0m

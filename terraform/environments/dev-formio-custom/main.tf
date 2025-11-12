@@ -30,8 +30,9 @@ module "formio_custom_service" {
   region      = var.region
   environment = var.environment
 
-  # Docker image configuration
-  custom_image_tag = "7"
+  # Docker image configuration (CI/CD-compatible Git SHA tagging)
+  # Run: ./scripts/tag-and-push.sh git-sha to build with current commit
+  custom_image_tag = "git-3b95aa5"
 
   # Secret Manager secret IDs (required)
   mongodb_connection_string_secret_id = "dss-formio-api-mongodb-custom-connection-string-dev"

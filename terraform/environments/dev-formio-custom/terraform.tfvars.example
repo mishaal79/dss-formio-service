@@ -1,0 +1,15 @@
+# Example Terraform variables file
+# Copy this file to terraform.tfvars and fill in your actual values
+
+# GCP Project Configuration
+project_id  = "erlich-dev"
+region      = "us-central1"
+environment = "dev"
+
+# Note: Secret IDs are configured in main.tf
+# Actual secret values are managed in GCP Secret Manager
+# Example secret names:
+# - dss-formio-api-mongodb-custom-connection-string-dev
+# - dss-formio-api-jwt-secret-dev
+# - dss-formio-api-token-private-key-v1-dev
+# - dss-formio-api-token-public-key-v1-dev
