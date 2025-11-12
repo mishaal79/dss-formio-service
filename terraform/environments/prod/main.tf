@@ -256,10 +256,10 @@ module "formio-custom" {
   egress_subnet_id = data.terraform_remote_state.central_infra.outputs.egress_subnet_id
 
   # Custom Image Configuration
-  custom_image_tag    = var.custom_image_tag      # Immutable tag in prod (e.g., "4.5.2")
-  enable_blue_green   = var.enable_blue_green     # Zero-downtime deployments
-  traffic_percent_new = var.traffic_percent_new   # Canary rollout percentage
-  new_revision_name   = var.new_revision_name     # Blue-green revision name
+  custom_image_tag    = var.custom_image_tag    # Immutable tag in prod (e.g., "4.5.2")
+  enable_blue_green   = var.enable_blue_green   # Zero-downtime deployments
+  traffic_percent_new = var.traffic_percent_new # Canary rollout percentage
+  new_revision_name   = var.new_revision_name   # Blue-green revision name
 
   # Database Configuration (using Enterprise database)
   mongodb_connection_string_secret_id = module.mongodb_atlas.mongodb_enterprise_connection_string_secret_id
@@ -275,14 +275,14 @@ module "formio-custom" {
   storage_bucket_name = module.storage.bucket_name
 
   # Service Configuration
-  portal_enabled      = var.portal_enabled
-  max_instances       = var.max_instances
-  min_instances       = var.min_instances
-  cpu_request         = var.cpu_request
-  memory_request      = var.memory_request
-  concurrency         = var.concurrency
-  timeout_seconds     = var.timeout_seconds
-  authorized_members  = var.authorized_members
+  portal_enabled     = var.portal_enabled
+  max_instances      = var.max_instances
+  min_instances      = var.min_instances
+  cpu_request        = var.cpu_request
+  memory_request     = var.memory_request
+  concurrency        = var.concurrency
+  timeout_seconds    = var.timeout_seconds
+  authorized_members = var.authorized_members
 
   depends_on = [
     module.storage,

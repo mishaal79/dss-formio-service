@@ -68,8 +68,8 @@ resource "google_cloud_run_service" "formio_api" {
         # Resource limits
         resources {
           limits = {
-            cpu    = "2000m"  # 2 vCPU
-            memory = "2Gi"    # 2GB RAM
+            cpu    = "2000m" # 2 vCPU
+            memory = "2Gi"   # 2GB RAM
           }
         }
 
@@ -170,7 +170,7 @@ resource "google_cloud_run_service" "formio_api" {
         }
       }
 
-      timeout_seconds = 300  # 5 minutes
+      timeout_seconds = 300 # 5 minutes
     }
 
     metadata {
@@ -191,7 +191,7 @@ resource "google_cloud_run_service" "formio_api" {
 
   metadata {
     annotations = {
-      "run.googleapis.com/ingress" = "all"  # Allow all ingress (controlled by load balancer)
+      "run.googleapis.com/ingress" = "all" # Allow all ingress (controlled by load balancer)
     }
   }
 }
@@ -324,7 +324,7 @@ resource "google_compute_backend_service" "formio_backend" {
 
   log_config {
     enable      = true
-    sample_rate = var.environment == "production" ? 0.1 : 1.0  # 10% sampling in prod
+    sample_rate = var.environment == "production" ? 0.1 : 1.0 # 10% sampling in prod
   }
 }
 

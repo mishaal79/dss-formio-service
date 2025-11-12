@@ -58,7 +58,7 @@ variable "deploy_enterprise" {
 variable "deploy_custom" {
   description = "Whether to deploy Form.io Custom Enhanced edition service"
   type        = bool
-  default     = false  # Disabled by default in prod - enable when ready
+  default     = false # Disabled by default in prod - enable when ready
 }
 
 # Form.io Enterprise Configuration
@@ -253,19 +253,19 @@ variable "portal_enabled" {
 variable "custom_image_tag" {
   description = "Docker image tag for custom Form.io enhanced edition (immutable version tag)"
   type        = string
-  default     = "4.5.2"  # Immutable tag - explicit version for production stability
+  default     = "4.5.2" # Immutable tag - explicit version for production stability
 }
 
 variable "enable_blue_green" {
   description = "Enable blue-green deployment for custom service"
   type        = bool
-  default     = true  # Enabled in prod for zero-downtime deployments
+  default     = true # Enabled in prod for zero-downtime deployments
 }
 
 variable "traffic_percent_new" {
   description = "Traffic percentage for new version (blue-green canary rollout)"
   type        = number
-  default     = 10  # Start with 10% traffic to new version
+  default     = 10 # Start with 10% traffic to new version
   validation {
     condition     = var.traffic_percent_new >= 0 && var.traffic_percent_new <= 100
     error_message = "Traffic percent must be between 0 and 100."

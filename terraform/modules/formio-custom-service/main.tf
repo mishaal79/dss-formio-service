@@ -37,10 +37,10 @@ locals {
   # Comprehensive labeling for operational excellence
   service_labels = merge(var.labels, {
     # Core service identification
-    service       = "formio-custom"
-    edition       = "custom-enhanced"
-    environment   = var.environment
-    version       = var.custom_image_tag
+    service     = "formio-custom"
+    edition     = "custom-enhanced"
+    environment = var.environment
+    version     = var.custom_image_tag
 
     # Cost and compliance tracking
     cost-center    = "dss-electrical"
@@ -48,9 +48,9 @@ locals {
     owner          = "platform-team"
 
     # Operational metadata
-    managed-by     = "terraform"
-    project-type   = "form-management"
-    backup-policy  = "daily"
+    managed-by    = "terraform"
+    project-type  = "form-management"
+    backup-policy = "daily"
 
     # Security and compliance
     data-classification = "confidential"
@@ -273,14 +273,14 @@ resource "google_artifact_registry_repository" "formio_custom" {
 # =============================================================================
 
 resource "google_cloud_run_v2_service" "formio_custom" {
-  project      = var.project_id
-  location     = var.region
-  name         = local.service_name_full
-  description  = "Form.io Custom Enhanced Edition with file upload optimizations"
+  project     = var.project_id
+  location    = var.region
+  name        = local.service_name_full
+  description = "Form.io Custom Enhanced Edition with file upload optimizations"
 
   template {
-    service_account = google_service_account.formio_custom.email
-    timeout         = "${var.request_timeout}s"
+    service_account                  = google_service_account.formio_custom.email
+    timeout                          = "${var.request_timeout}s"
     max_instance_request_concurrency = var.container_concurrency
 
     scaling {
@@ -289,7 +289,7 @@ resource "google_cloud_run_v2_service" "formio_custom" {
     }
 
     containers {
-      name  = "formio-custom"
+      name = "formio-custom"
       # Use custom image from Google Container Registry (GCR)
       # Built by GitHub Actions workflow (.github/workflows/build-formio-custom.yml)
       # Image tags: {version} (immutable), {major}.{minor} (mutable), {major} (mutable), latest
@@ -304,7 +304,7 @@ resource "google_cloud_run_v2_service" "formio_custom" {
       dynamic "env" {
         for_each = local.filtered_env_vars
         content {
-          name = env.value.name
+          name  = env.value.name
           value = env.value.value
 
           dynamic "value_source" {
@@ -388,12 +388,12 @@ resource "google_service_account" "formio_custom" {
 # Grant service account access to required resources
 resource "google_project_iam_member" "formio_custom_roles" {
   for_each = toset([
-    "roles/secretmanager.secretAccessor",    # Access secrets
-    "roles/logging.logWriter",              # Write logs
-    "roles/monitoring.metricWriter",        # Write metrics
-    "roles/cloudtrace.agent",              # Write traces
-    "roles/opsconfigviewer",               # View operations
-    "roles/storage.objectViewer",          # Access GCS bucket
+    "roles/secretmanager.secretAccessor", # Access secrets
+    "roles/logging.logWriter",            # Write logs
+    "roles/monitoring.metricWriter",      # Write metrics
+    "roles/cloudtrace.agent",             # Write traces
+    "roles/opsconfigviewer",              # View operations
+    "roles/storage.objectViewer",         # Access GCS bucket
   ])
 
   project = var.project_id
@@ -442,10 +442,10 @@ resource "google_compute_backend_service" "formio_custom" {
     max_ttl     = var.cache_max_ttl
     client_ttl  = var.cache_client_ttl
 
-    negative_caching        = true
+    negative_caching = true
     negative_caching_policy {
       code = 404
-      ttl  = 300  # Cache 404s for 5 minutes
+      ttl  = 300 # Cache 404s for 5 minutes
     }
 
     # Cache key configuration
@@ -460,7 +460,7 @@ resource "google_compute_backend_service" "formio_custom" {
 
   # Log configuration
   log_config {
-    enable = true
+    enable      = true
     sample_rate = var.log_sample_rate
   }
 
@@ -547,7 +547,7 @@ resource "google_monitoring_alert_policy" "formio_custom_error_rate" {
   project      = var.project_id
   display_name = "Form.io Custom High Error Rate"
 
-  combiner     = "OR"
+  combiner = "OR"
   conditions {
     display_name = "Error rate > ${var.error_rate_threshold}%"
     condition_threshold {
@@ -555,12 +555,12 @@ resource "google_monitoring_alert_policy" "formio_custom_error_rate" {
 
       aggregations {
         alignment_period     = "300s"
-        per_series_aligner  = "ALIGN_RATE"
+        per_series_aligner   = "ALIGN_RATE"
         cross_series_reducer = "REDUCE_PERCENTILE_99"
       }
 
-      comparison      = "COMPARISON_GT"
-      duration        = "900s"
+      comparison = "COMPARISON_GT"
+      duration   = "900s"
       trigger {
         count   = 1
         percent = 100
@@ -570,7 +570,7 @@ resource "google_monitoring_alert_policy" "formio_custom_error_rate" {
   }
 
   notification_channels = var.notification_channels
-  enabled              = true
+  enabled               = true
 }
 
 resource "google_monitoring_alert_policy" "formio_custom_latency" {
@@ -586,20 +586,20 @@ resource "google_monitoring_alert_policy" "formio_custom_latency" {
 
       aggregations {
         alignment_period     = "300s"
-        per_series_aligner  = "ALIGN_PERCENTILE_99"
+        per_series_aligner   = "ALIGN_PERCENTILE_99"
         cross_series_reducer = "REDUCE_PERCENTILE_99"
       }
 
-      comparison      = "COMPARISON_GT"
-      duration        = "900s"
+      comparison = "COMPARISON_GT"
+      duration   = "900s"
       trigger {
         count   = 1
         percent = 100
       }
-      threshold_value = var.latency_threshold / 1000  # Convert ms to seconds
+      threshold_value = var.latency_threshold / 1000 # Convert ms to seconds
     }
   }
 
   notification_channels = var.notification_channels
-  enabled              = true
+  enabled               = true
 }

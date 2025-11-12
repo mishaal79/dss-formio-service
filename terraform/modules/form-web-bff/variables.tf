@@ -55,18 +55,23 @@ variable "container_port" {
 }
 
 # =============================================================================
-# VPC NETWORKING CONFIGURATION
+# VPC NETWORKING CONFIGURATION - DIRECT VPC EGRESS
 # =============================================================================
 
-variable "vpc_connector_id" {
-  description = "VPC connector ID for private networking (from central infrastructure)"
+variable "vpc_network_id" {
+  description = "VPC network ID for Direct VPC Egress (from central infrastructure)"
+  type        = string
+}
+
+variable "egress_subnet_id" {
+  description = "Egress subnet ID for Direct VPC Egress (from central infrastructure)"
   type        = string
 }
 
 variable "vpc_egress_setting" {
-  description = "VPC egress setting (PRIVATE_RANGES_ONLY recommended)"
+  description = "VPC egress setting (ALL_TRAFFIC or PRIVATE_RANGES_ONLY)"
   type        = string
-  default     = "PRIVATE_RANGES_ONLY"
+  default     = "ALL_TRAFFIC"
   validation {
     condition     = contains(["ALL_TRAFFIC", "PRIVATE_RANGES_ONLY"], var.vpc_egress_setting)
     error_message = "VPC egress setting must be either ALL_TRAFFIC or PRIVATE_RANGES_ONLY."

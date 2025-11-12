@@ -14,6 +14,7 @@
 # Terraform variable files (may contain secrets)
 *.tfvars
 !*.tfvars.example
+terraform.tfvars
 
 # Secret files and directories
 secrets/

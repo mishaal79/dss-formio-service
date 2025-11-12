@@ -95,10 +95,10 @@ output "configuration" {
   description = "Service configuration summary"
   value = {
     # Basic configuration
-    version                    = var.custom_image_tag
-    environment               = var.environment
-    project_id                = var.project_id
-    region                    = var.region
+    version     = var.custom_image_tag
+    environment = var.environment
+    project_id  = var.project_id
+    region      = var.region
 
     # Enhanced features
     enable_async_gcs_upload   = var.enable_async_gcs_upload
@@ -107,35 +107,35 @@ output "configuration" {
     railway_oriented_uploads  = var.railway_oriented_uploads
 
     # Service configuration
-    portal_enabled            = var.portal_enabled
-    debug_enabled             = var.debug_enabled
-    tus_enabled               = var.tus_enabled
-    tus_max_size              = var.tus_max_size
+    portal_enabled = var.portal_enabled
+    debug_enabled  = var.debug_enabled
+    tus_enabled    = var.tus_enabled
+    tus_max_size   = var.tus_max_size
 
     # Scaling configuration
-    min_instances             = var.min_instance_count
-    max_instances             = var.max_instance_count
-    container_concurrency     = var.container_concurrency
-    memory_limit              = var.memory_limit
-    memory_request            = var.memory_request
-    cpu_limit                 = var.cpu_limit
-    cpu_request               = var.cpu_request
+    min_instances         = var.min_instance_count
+    max_instances         = var.max_instance_count
+    container_concurrency = var.container_concurrency
+    memory_limit          = var.memory_limit
+    memory_request        = var.memory_request
+    cpu_limit             = var.cpu_limit
+    cpu_request           = var.cpu_request
 
     # CDN configuration
-    cdn_enabled               = google_compute_backend_service.formio_custom.enable_cdn
-    cache_default_ttl         = var.cache_default_ttl
-    cache_max_ttl             = var.cache_max_ttl
-    cache_client_ttl          = var.cache_client_ttl
+    cdn_enabled       = google_compute_backend_service.formio_custom.enable_cdn
+    cache_default_ttl = var.cache_default_ttl
+    cache_max_ttl     = var.cache_max_ttl
+    cache_client_ttl  = var.cache_client_ttl
 
     # Security configuration
-    iap_enabled               = var.iap_enabled
-    cors_enabled              = var.cors_enabled
-    cors_origin               = var.cors_origin
+    iap_enabled  = var.iap_enabled
+    cors_enabled = var.cors_enabled
+    cors_origin  = var.cors_origin
 
     # Monitoring
-    enable_alerting           = var.enable_alerting
-    error_rate_threshold      = var.error_rate_threshold
-    latency_threshold         = var.latency_threshold
+    enable_alerting      = var.enable_alerting
+    error_rate_threshold = var.error_rate_threshold
+    latency_threshold    = var.latency_threshold
   }
 }
 
@@ -174,38 +174,38 @@ output "integration" {
   value = {
     # Load balancer configuration
     load_balancer = {
-      backend_service_id = google_compute_backend_service.formio_custom.id
-      backend_service_name = google_compute_backend_service.formio_custom.name
-      health_check_path = "/health"
+      backend_service_id     = google_compute_backend_service.formio_custom.id
+      backend_service_name   = google_compute_backend_service.formio_custom.name
+      health_check_path      = "/health"
       network_endpoint_group = google_compute_region_network_endpoint_group.formio_custom.id
     }
 
     # Service account configuration
     service_account = {
-      email = google_service_account.formio_custom.email
-      name = google_service_account.formio_custom.name
+      email        = google_service_account.formio_custom.email
+      name         = google_service_account.formio_custom.name
       display_name = google_service_account.formio_custom.display_name
     }
 
     # Storage configuration
     storage = {
-      bucket_name = var.storage_bucket_name
+      bucket_name    = var.storage_bucket_name
       gcs_project_id = var.gcs_project_id != "" ? var.gcs_project_id : var.project_id
-      provider = "s3"
-      server = "https://storage.googleapis.com"
+      provider       = "s3"
+      server         = "https://storage.googleapis.com"
     }
 
     # Database configuration
     database = {
-      type = "mongodb"
-      database_name = var.mongodb_database_name
+      type              = "mongodb"
+      database_name     = var.mongodb_database_name
       connection_secret = var.mongodb_connection_string_secret_id
     }
 
     # Redis configuration (for BullMQ)
     redis = {
-      host = var.redis_host
-      port = var.redis_port
+      host         = var.redis_host
+      port         = var.redis_port
       has_password = var.redis_password_secret_id != null
     }
   }
@@ -219,22 +219,22 @@ output "monitoring" {
   description = "Monitoring and alerting configuration"
   value = {
     service = {
-      id = google_monitoring_service.formio_custom.service_id
+      id           = google_monitoring_service.formio_custom.service_id
       display_name = google_monitoring_service.formio_custom.display_name
-      type = "CLOUD_RUN"
+      type         = "CLOUD_RUN"
     }
 
     alerts = {
       error_rate = var.enable_alerting ? {
         policy_id = try(google_monitoring_alert_policy.formio_custom_error_rate[0].id, null)
         threshold = var.error_rate_threshold
-        enabled = true
+        enabled   = true
       } : null
 
       latency = var.enable_alerting ? {
         policy_id = try(google_monitoring_alert_policy.formio_custom_latency[0].id, null)
         threshold = var.latency_threshold
-        enabled = true
+        enabled   = true
       } : null
     }
   }
@@ -249,11 +249,11 @@ output "security" {
   value = {
     secrets = {
       mongodb_connection = var.mongodb_connection_string_secret_id
-      jwt_secret = var.formio_jwt_secret_secret_id
-      db_secret = var.formio_db_secret_secret_id
-      root_password = var.formio_root_password_secret_id
-      redis_password = var.redis_password_secret_id
-      email_password = var.email_password_secret_id
+      jwt_secret         = var.formio_jwt_secret_secret_id
+      db_secret          = var.formio_db_secret_secret_id
+      root_password      = var.formio_root_password_secret_id
+      redis_password     = var.redis_password_secret_id
+      email_password     = var.email_password_secret_id
     }
 
     permissions = {
@@ -269,9 +269,9 @@ output "security" {
 
     features = {
       railway_oriented_uploads = var.railway_oriented_uploads
-      xxhash_integrity = var.xxhash_enabled
-      async_processing = var.enable_async_gcs_upload
-      iap_protection = var.iap_enabled
+      xxhash_integrity         = var.xxhash_enabled
+      async_processing         = var.enable_async_gcs_upload
+      iap_protection           = var.iap_enabled
     }
   }
 }

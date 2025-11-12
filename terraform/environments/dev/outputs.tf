@@ -282,13 +282,13 @@ output "formio_community_standalone_backend_service_name" {
 
 output "formio_community_standalone_deployment_status" {
   description = "Community standalone deployment status and configuration"
-  value = null
+  value       = null
 }
 
 # Load Balancer Integration Instructions for Community Standalone
 output "community_standalone_lb_integration" {
   description = "Instructions for integrating Community standalone with central load balancer"
-  value = null
+  value       = null
 }
 
 # =============================================================================

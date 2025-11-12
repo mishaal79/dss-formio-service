@@ -17,7 +17,7 @@ variable "environment" {
   description = "Environment name (dev, staging, prod)"
   type        = string
   validation {
-    condition = contains(["dev", "staging", "prod"], var.environment)
+    condition     = contains(["dev", "staging", "prod"], var.environment)
     error_message = "Environment must be one of: dev, staging, prod."
   }
 }
@@ -52,7 +52,7 @@ variable "traffic_percent_new" {
   type        = number
   default     = 10
   validation {
-    condition = var.traffic_percent_new >= 0 && var.traffic_percent_new <= 100
+    condition     = var.traffic_percent_new >= 0 && var.traffic_percent_new <= 100
     error_message = "Traffic percent must be between 0 and 100."
   }
 }
@@ -121,7 +121,7 @@ variable "bullmq_worker_concurrency" {
   type        = number
   default     = 3
   validation {
-    condition = var.bullmq_worker_concurrency >= 1 && var.bullmq_worker_concurrency <= 20
+    condition     = var.bullmq_worker_concurrency >= 1 && var.bullmq_worker_concurrency <= 20
     error_message = "Worker concurrency must be between 1 and 20."
   }
 }
@@ -160,7 +160,7 @@ variable "gcs_project_id" {
 variable "redis_host" {
   description = "Redis host address for BullMQ job queue"
   type        = string
-  default     = "10.8.0.2"  # Default VPC connector IP
+  default     = "10.8.0.2" # Default VPC connector IP
 }
 
 variable "redis_port" {
@@ -168,7 +168,7 @@ variable "redis_port" {
   type        = number
   default     = 6379
   validation {
-    condition = var.redis_port >= 1 && var.redis_port <= 65535
+    condition     = var.redis_port >= 1 && var.redis_port <= 65535
     error_message = "Redis port must be between 1 and 65535."
   }
 }
@@ -210,7 +210,7 @@ variable "tus_port" {
   type        = number
   default     = 1080
   validation {
-    condition = var.tus_port >= 1 && var.tus_port <= 65535
+    condition     = var.tus_port >= 1 && var.tus_port <= 65535
     error_message = "TUS port must be between 1 and 65535."
   }
 }
@@ -218,9 +218,9 @@ variable "tus_port" {
 variable "tus_max_size" {
   description = "Maximum file size for TUS uploads in bytes"
   type        = number
-  default     = 5368709120  # 5GB
+  default     = 5368709120 # 5GB
   validation {
-    condition = var.tus_max_size >= 0
+    condition     = var.tus_max_size >= 0
     error_message = "TUS max size must be non-negative."
   }
 }
@@ -234,7 +234,7 @@ variable "email_type" {
   type        = string
   default     = "smtp"
   validation {
-    condition = contains(["smtp", "sendgrid", "ses", "local"], var.email_type)
+    condition     = contains(["smtp", "sendgrid", "ses", "local"], var.email_type)
     error_message = "Email type must be one of: smtp, sendgrid, ses, local."
   }
 }
@@ -250,7 +250,7 @@ variable "email_port" {
   type        = number
   default     = 587
   validation {
-    condition = var.email_port >= 1 && var.email_port <= 65535
+    condition     = var.email_port >= 1 && var.email_port <= 65535
     error_message = "Email port must be between 1 and 65535."
   }
 }
@@ -298,7 +298,7 @@ variable "min_instance_count" {
   type        = number
   default     = 0
   validation {
-    condition = var.min_instance_count >= 0
+    condition     = var.min_instance_count >= 0
     error_message = "Minimum instance count must be non-negative."
   }
 }
@@ -308,7 +308,7 @@ variable "max_instance_count" {
   type        = number
   default     = 100
   validation {
-    condition = var.max_instance_count > 0
+    condition     = var.max_instance_count > 0
     error_message = "Maximum instance count must be positive."
   }
 }
@@ -318,7 +318,7 @@ variable "container_concurrency" {
   type        = number
   default     = 80
   validation {
-    condition = var.container_concurrency >= 0
+    condition     = var.container_concurrency >= 0
     error_message = "Container concurrency must be non-negative."
   }
 }
@@ -328,7 +328,7 @@ variable "request_timeout" {
   type        = number
   default     = 300
   validation {
-    condition = var.request_timeout >= 1
+    condition     = var.request_timeout >= 1
     error_message = "Request timeout must be at least 1 second."
   }
 }
@@ -338,7 +338,7 @@ variable "memory_limit" {
   type        = string
   default     = "1Gi"
   validation {
-    condition = can(regex("^[0-9]+(Ki|Mi|Gi)$", var.memory_limit))
+    condition     = can(regex("^[0-9]+(Ki|Mi|Gi)$", var.memory_limit))
     error_message = "Memory limit must be in format: <number><unit>, where unit is Ki, Mi, or Gi."
   }
 }
@@ -348,7 +348,7 @@ variable "memory_request" {
   type        = string
   default     = "512Mi"
   validation {
-    condition = can(regex("^[0-9]+(Ki|Mi|Gi)$", var.memory_request))
+    condition     = can(regex("^[0-9]+(Ki|Mi|Gi)$", var.memory_request))
     error_message = "Memory request must be in format: <number><unit>, where unit is Ki, Mi, or Gi."
   }
 }
@@ -358,7 +358,7 @@ variable "cpu_limit" {
   type        = string
   default     = "1000m"
   validation {
-    condition = can(regex("^[0-9]+m?$", var.cpu_limit))
+    condition     = can(regex("^[0-9]+m?$", var.cpu_limit))
     error_message = "CPU limit must be in format: <number>m or <number>, where m indicates millicores."
   }
 }
@@ -368,7 +368,7 @@ variable "cpu_request" {
   type        = string
   default     = "500m"
   validation {
-    condition = can(regex("^[0-9]+m?$", var.cpu_request))
+    condition     = can(regex("^[0-9]+m?$", var.cpu_request))
     error_message = "CPU request must be in format: <number>m or <number>, where m indicates millicores."
   }
 }
@@ -380,9 +380,9 @@ variable "cpu_request" {
 variable "cache_default_ttl" {
   description = "Default cache TTL in seconds"
   type        = number
-  default     = 3600  # 1 hour
+  default     = 3600 # 1 hour
   validation {
-    condition = var.cache_default_ttl >= 0
+    condition     = var.cache_default_ttl >= 0
     error_message = "Default TTL must be non-negative."
   }
 }
@@ -390,9 +390,9 @@ variable "cache_default_ttl" {
 variable "cache_max_ttl" {
   description = "Maximum cache TTL in seconds"
   type        = number
-  default     = 86400  # 24 hours
+  default     = 86400 # 24 hours
   validation {
-    condition = var.cache_max_ttl >= 0
+    condition     = var.cache_max_ttl >= 0
     error_message = "Max TTL must be non-negative."
   }
 }
@@ -400,9 +400,9 @@ variable "cache_max_ttl" {
 variable "cache_client_ttl" {
   description = "Client cache TTL in seconds"
   type        = number
-  default     = 1800  # 30 minutes
+  default     = 1800 # 30 minutes
   validation {
-    condition = var.cache_client_ttl >= 0
+    condition     = var.cache_client_ttl >= 0
     error_message = "Client TTL must be non-negative."
   }
 }
@@ -436,7 +436,7 @@ variable "log_sample_rate" {
   type        = number
   default     = 0.1
   validation {
-    condition = var.log_sample_rate >= 0.0 && var.log_sample_rate <= 1.0
+    condition     = var.log_sample_rate >= 0.0 && var.log_sample_rate <= 1.0
     error_message = "Log sample rate must be between 0.0 and 1.0."
   }
 }
@@ -507,7 +507,7 @@ variable "error_rate_threshold" {
   type        = number
   default     = 5.0
   validation {
-    condition = var.error_rate_threshold >= 0.0 && var.error_rate_threshold <= 100.0
+    condition     = var.error_rate_threshold >= 0.0 && var.error_rate_threshold <= 100.0
     error_message = "Error rate threshold must be between 0 and 100."
   }
 }
@@ -517,7 +517,7 @@ variable "latency_threshold" {
   type        = number
   default     = 1000
   validation {
-    condition = var.latency_threshold >= 0
+    condition     = var.latency_threshold >= 0
     error_message = "Latency threshold must be non-negative."
   }
 }

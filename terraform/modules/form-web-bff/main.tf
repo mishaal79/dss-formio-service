@@ -146,10 +146,15 @@ resource "google_cloud_run_v2_service" "form_web_bff" {
     # Service account
     service_account = google_service_account.form_web_bff.email
 
-    # VPC connector for private networking
+    # Direct VPC egress using central infrastructure egress subnet
+    # Routes all traffic through VPC for private networking
     vpc_access {
-      connector = var.vpc_connector_id
-      egress    = var.vpc_egress_setting # PRIVATE_RANGES_ONLY recommended
+      network_interfaces {
+        network    = var.vpc_network_id
+        subnetwork = var.egress_subnet_id
+        tags       = ["form-web-bff-egress"]
+      }
+      egress = var.vpc_egress_setting
     }
 
     # Request timeout

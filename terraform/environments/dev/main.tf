@@ -232,9 +232,10 @@ module "form-web-bff" {
   # Port configuration (variable-based, not hardcoded)
   container_port = 3002
 
-  # VPC networking (from central infrastructure)
-  vpc_connector_id   = data.terraform_remote_state.central_infra.outputs.vpc_connector_id
-  vpc_egress_setting = "PRIVATE_RANGES_ONLY"
+  # VPC networking (from central infrastructure - Direct VPC Egress)
+  vpc_network_id     = data.terraform_remote_state.central_infra.outputs.vpc_network_id
+  egress_subnet_id   = data.terraform_remote_state.central_infra.outputs.egress_subnet_id
+  vpc_egress_setting = "ALL_TRAFFIC"
 
   # Service-to-service authentication to formio-custom
   formio_custom_service_name = var.deploy_custom ? module.formio-custom[0].service_name : ""
