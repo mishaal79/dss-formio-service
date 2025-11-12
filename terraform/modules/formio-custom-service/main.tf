@@ -5,34 +5,16 @@
 # capabilities, railway-oriented atomic uploads, and performance optimizations
 # Uses custom Docker image built from the monorepo
 
-# Fetch secrets from Secret Manager
-data "google_secret_manager_secret_version" "mongodb_connection_string" {
-  provider = google-beta
-  project  = var.project_id
-  secret   = var.mongodb_connection_string_secret_id
-}
-
-data "google_secret_manager_secret_version" "formio_jwt_secret" {
-  provider = google-beta
-  project  = var.project_id
-  secret   = var.formio_jwt_secret_secret_id
-}
-
-data "google_secret_manager_secret_version" "formio_db_secret" {
-  provider = google-beta
-  project  = var.project_id
-  secret   = var.formio_db_secret_secret_id
-}
-
-data "google_secret_manager_secret_version" "formio_root_password" {
-  provider = google-beta
-  project  = var.project_id
-  secret   = var.formio_root_password_secret_id
-}
+# SECURITY NOTE: Secrets are referenced directly in Cloud Run env vars,
+# never fetched into Terraform state. This follows Gemini's architectural
+# guidance: "Secret references in Cloud Run (never expose in state/logs)"
 
 locals {
   # Service naming
   service_name_full = "formio-custom-${var.environment}"
+
+  # Sanitize version for GCP labels (only lowercase alphanumeric, hyphen, underscore)
+  version_sanitized = replace(replace(var.custom_image_tag, ".", "-"), ":", "-")
 
   # Comprehensive labeling for operational excellence
   service_labels = merge(var.labels, {
@@ -40,7 +22,7 @@ locals {
     service     = "formio-custom"
     edition     = "custom-enhanced"
     environment = var.environment
-    version     = var.custom_image_tag
+    version     = local.version_sanitized
 
     # Cost and compliance tracking
     cost-center    = "dss-electrical"
@@ -235,6 +217,27 @@ locals {
       name         = "CORS_ORIGIN"
       value        = var.cors_origin
       value_source = null
+    },
+    # Token keys from Secret Manager (Form.io expects these exact names)
+    {
+      name  = "TOKEN_PRIVATE_KEY"
+      value = null
+      value_source = {
+        secret_key_ref = {
+          secret  = var.token_private_key_secret_id
+          version = "latest"
+        }
+      }
+    },
+    {
+      name  = "TOKEN_PUBLIC_KEY"
+      value = null
+      value_source = {
+        secret_key_ref = {
+          secret  = var.token_public_key_secret_id
+          version = "latest"
+        }
+      }
     }
   ]
 
@@ -335,7 +338,7 @@ resource "google_cloud_run_v2_service" "formio_custom" {
           port = local.container_port
         }
         failure_threshold     = 3
-        initial_delay_seconds = 10
+        initial_delay_seconds = 30  # Form.io needs time to download/install client
         period_seconds        = 5
         timeout_seconds       = 5
       }
@@ -392,7 +395,6 @@ resource "google_project_iam_member" "formio_custom_roles" {
     "roles/logging.logWriter",            # Write logs
     "roles/monitoring.metricWriter",      # Write metrics
     "roles/cloudtrace.agent",             # Write traces
-    "roles/opsconfigviewer",              # View operations
     "roles/storage.objectViewer",         # Access GCS bucket
   ])
 
@@ -408,6 +410,8 @@ resource "google_secret_manager_secret_iam_member" "formio_custom_secrets" {
     var.formio_jwt_secret_secret_id,
     var.formio_db_secret_secret_id,
     var.formio_root_password_secret_id,
+    var.token_private_key_secret_id,
+    var.token_public_key_secret_id,
     var.redis_password_secret_id,
     var.email_password_secret_id,
   ]))
@@ -470,10 +474,12 @@ resource "google_compute_backend_service" "formio_custom" {
   }
 
   # IAP configuration for additional security
-  iap {
-    enabled              = var.iap_enabled
-    oauth2_client_id     = var.iap_enabled ? var.iap_client_id : ""
-    oauth2_client_secret = var.iap_enabled ? var.iap_client_secret : ""
+  dynamic "iap" {
+    for_each = var.iap_enabled ? [1] : []
+    content {
+      oauth2_client_id     = var.iap_client_id
+      oauth2_client_secret = var.iap_client_secret
+    }
   }
 }
 
@@ -537,6 +543,10 @@ resource "google_monitoring_service" "formio_custom" {
 
   basic_service {
     service_type = "CLOUD_RUN"
+    service_labels = {
+      location     = var.region
+      service_name = local.service_name_full
+    }
   }
 
 }
