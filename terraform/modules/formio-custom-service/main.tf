@@ -477,6 +477,7 @@ resource "google_compute_backend_service" "formio_custom" {
   dynamic "iap" {
     for_each = var.iap_enabled ? [1] : []
     content {
+      enabled              = true
       oauth2_client_id     = var.iap_client_id
       oauth2_client_secret = var.iap_client_secret
     }

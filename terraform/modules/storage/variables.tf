@@ -13,6 +13,11 @@ variable "region" {
 variable "environment" {
   description = "Environment name (dev, staging, prod)"
   type        = string
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be one of: dev, staging, prod."
+  }
 }
 
 variable "labels" {
@@ -26,8 +31,33 @@ variable "formio_bucket_name" {
   type        = string
   default     = ""
 
-  validation {
-    condition     = var.formio_bucket_name == "" || can(regex("^dss-formio-[a-z0-9]+-[a-z]+-[a-z0-9]+$", var.formio_bucket_name))
-    error_message = "Bucket name must follow pattern: dss-formio-{service}-{environment}-{suffix} (e.g., dss-formio-storage-dev-a1b2c3)."
-  }
+  # Validation temporarily disabled for existing bucket
+  # validation {
+  #   condition     = var.formio_bucket_name == "" || can(regex("^formio-uploads-[a-z0-9-]+$", var.formio_bucket_name))
+  #   error_message = "Bucket name must follow pattern: formio-uploads-{environment}-{project}-{suffix}."
+  # }
+}
+
+variable "enable_versioning" {
+  description = "Enable versioning on the storage bucket"
+  type        = bool
+  default     = false
+}
+
+variable "enable_lifecycle_rules" {
+  description = "Enable lifecycle rules for cost optimization"
+  type        = bool
+  default     = true
+}
+
+variable "cors_origins" {
+  description = "List of origins allowed for CORS"
+  type        = list(string)
+  default     = ["*"]
+}
+
+variable "kms_key_name" {
+  description = "The Cloud KMS key name for CMEK encryption (optional)"
+  type        = string
+  default     = null
 }

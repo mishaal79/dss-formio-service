@@ -178,6 +178,31 @@ variable "formio_bucket_name" {
   default     = "" # Will be auto-generated if empty
 }
 
+# Storage Module Configuration
+variable "enable_versioning" {
+  description = "Enable versioning on the storage bucket"
+  type        = bool
+  default     = false
+}
+
+variable "enable_lifecycle_rules" {
+  description = "Enable lifecycle rules for cost optimization"
+  type        = bool
+  default     = true
+}
+
+variable "cors_origins" {
+  description = "List of origins allowed for CORS"
+  type        = list(string)
+  default     = ["*"]
+}
+
+variable "kms_key_name" {
+  description = "The Cloud KMS key name for CMEK encryption (optional)"
+  type        = string
+  default     = null
+}
+
 # MongoDB Atlas Configuration
 variable "mongodb_atlas_org_id" {
   description = "MongoDB Atlas organization ID"

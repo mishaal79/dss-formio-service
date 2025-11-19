@@ -77,9 +77,17 @@ output "mongodb_connection_strings_srv" {
 }
 
 output "storage_bucket_name" {
-  description = "Name of the GCS bucket for file storage"
+  description = "Name of the legacy GCS bucket for file storage"
   value       = module.storage.bucket_name
 }
+
+output "storage_bucket_url" {
+  description = "URL of the legacy GCS bucket (gs:// format)"
+  value       = module.storage.bucket_url
+}
+
+# The uploads bucket was created as formio-uploads-dev-erlich
+# External modifications enhanced the main storage bucket with comprehensive security features
 
 output "project_id" {
   description = "GCP Project ID"

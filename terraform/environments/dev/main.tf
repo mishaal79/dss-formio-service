@@ -61,32 +61,61 @@ module "storage" {
   environment = var.environment
   labels      = local.common_labels
 
-  formio_bucket_name = var.formio_bucket_name
+  formio_bucket_name     = var.formio_bucket_name
+  enable_versioning      = var.enable_versioning
+  enable_lifecycle_rules = var.enable_lifecycle_rules
+  cors_origins           = var.cors_origins
+  kms_key_name           = var.kms_key_name
 }
 
 module "mongodb_atlas" {
-  source = "../../modules/mongodb-atlas"
+  source = "../../modules/mongodb-atlas-m30"
 
   project_id  = var.project_id
   environment = var.environment
   labels      = local.common_labels
 
-  atlas_project_name             = "${var.service_name}-${var.environment}"
-  atlas_org_id                   = var.mongodb_atlas_org_id
-  cluster_name                   = "${var.service_name}-${var.environment}-cluster"
+  # MongoDB Atlas Project Configuration
+  atlas_project_name = "${var.service_name}-${var.environment}-m30"
+  atlas_org_id       = var.mongodb_atlas_org_id
+
+  # M30 Dedicated Cluster Configuration
+  cluster_name                   = "formio-cluster-${var.environment}-m30"
+  cluster_tier                   = "M30"
   backing_provider_name          = "GCP"
-  atlas_region_name              = "ASIA_SOUTHEAST_2"
+  atlas_region_name              = "AUSTRALIA_SOUTHEAST_1"
+  mongodb_version                = "7.0"
   termination_protection_enabled = var.environment == "prod"
 
+  # Backup Configuration
+  backup_enabled               = true
+  pit_enabled                  = true
+  auto_scaling_disk_gb_enabled = true
+
+  # Advanced Configuration
+  javascript_enabled                   = true
+  oplog_size_mb                        = 2048
+  sample_size_bi_connector             = 1000
+  sample_refresh_interval_bi_connector = 300
+
+  # VPC Peering Configuration (optional for private connectivity)
+  enable_vpc_peering = false # Set to true to enable VPC peering
+  # vpc_network_name   = data.terraform_remote_state.central_infra.outputs.vpc_network_name
+  # atlas_cidr_block   = "192.168.248.0/21"
+
+  # IP Access List Configuration
+  cloud_nat_static_ips      = [] # Add Cloud NAT static IPs when available
+  additional_ip_access_list = {} # Will fall back to 0.0.0.0/0 for now
+
+  # Database User Configuration
   admin_username            = var.mongodb_admin_username
   admin_password_secret_id  = module.secrets.mongodb_admin_password_secret_id
   formio_username           = var.mongodb_formio_username
   formio_password_secret_id = module.secrets.mongodb_formio_password_secret_id
 
+  # Database Names
   community_database_name  = local.mongodb_community_db_name
   enterprise_database_name = local.mongodb_enterprise_db_name
-
-  # cloud_nat_static_ip removed - MongoDB Atlas now accepts all internet traffic
 
   depends_on = [
     module.storage
@@ -122,6 +151,9 @@ module "formio-custom" {
   formio_db_secret_secret_id     = module.secrets.formio_db_secret_secret_id
   formio_root_email              = var.formio_root_email
   formio_root_password_secret_id = module.secrets.formio_root_password_secret_id
+  # TODO: Restore these once secrets module outputs are configured
+  token_public_key_secret_id  = null # module.secrets.token_public_key_v1_secret_id
+  token_private_key_secret_id = null # module.secrets.token_private_key_v1_secret_id
 
   # Enhanced File Upload Configuration
   enable_async_gcs_upload   = var.enable_async_gcs_upload
