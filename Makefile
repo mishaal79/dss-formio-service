@@ -147,7 +147,38 @@ destroy: init validate-env ## Destroy infrastructure (requires confirmation)
 	fi
 
 # =============================================================================
-# QUALITY & VALIDATION
+# CONTINUOUS DELIVERY PIPELINE
+# =============================================================================
+
+.PHONY: release
+release: validate plan apply health-check ## Full CD pipeline: validate → plan → apply → health-check
+	@echo "✅ Release pipeline complete for $(ENV)"
+	@echo "   Next steps:"
+	@echo "   1. Review deployment logs in .deploy/deployment-log.jsonl"
+	@echo "   2. Monitor service health: make status ENV=$(ENV)"
+
+.PHONY: validate
+validate: validate-env ## Run all validation gates (git, terraform, security)
+	@echo "--> Running pre-deploy validation gates for $(ENV)..."
+	@./scripts/validate.sh $(ENV)
+
+.PHONY: git-clean
+git-clean: ## Check for uncommitted changes
+	@if [ -n "$$(git status --porcelain)" ]; then \
+		echo "❌ Error: Uncommitted changes detected"; \
+		echo "Resolution: git add -A && git commit -m 'Your message'"; \
+		exit 1; \
+	fi
+	@echo "✅ Git working directory is clean"
+
+.PHONY: health-check
+health-check: require-terraform-outputs ## Validate service health after deployment
+	@echo "--> Running health check for $(ENV)..."
+	@SERVICE_NAME=$$(cd $(TF_DIR) && terraform output -raw formio_custom_service_name 2>/dev/null || echo "formio-custom-$(ENV)"); \
+	./scripts/health-check.sh $$SERVICE_NAME $(REGION) $(PROJECT_ID)
+
+# =============================================================================
+# QUALITY & VALIDATION (Legacy - now integrated into CD pipeline)
 # =============================================================================
 
 .PHONY: validate-env
@@ -160,7 +191,8 @@ validate-env:
 	fi
 
 .PHONY: check
-check: format lint ## Run all quality checks
+check: format lint ## Run all quality checks (legacy - use 'validate' instead)
+	@echo "ℹ️  Consider using 'make validate' for full CD validation gates"
 
 .PHONY: format
 format: ## Format Terraform code

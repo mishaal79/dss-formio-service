@@ -152,3 +152,30 @@ variable "pubsub_topic_name" {
   type        = string
   default     = ""
 }
+
+# =============================================================================
+# BLUE-GREEN DEPLOYMENT & TRAFFIC MANAGEMENT
+# =============================================================================
+
+variable "new_revision_traffic_percent" {
+  description = "Traffic percentage for new revision (0-100). Use 0 for blue-green deployment."
+  type        = number
+  default     = 0
+
+  validation {
+    condition     = var.new_revision_traffic_percent >= 0 && var.new_revision_traffic_percent <= 100
+    error_message = "Traffic percent must be between 0 and 100."
+  }
+}
+
+variable "enable_gradual_rollout" {
+  description = "Enable automated gradual traffic promotion (managed by deployment scripts)"
+  type        = bool
+  default     = true
+}
+
+variable "previous_revision_name" {
+  description = "Previous revision name for rollback (managed by Terraform state, typically auto-detected)"
+  type        = string
+  default     = null
+}
