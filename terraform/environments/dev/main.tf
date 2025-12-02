@@ -203,7 +203,7 @@ module "formio-custom" {
   dns_name          = var.dns_name
 
   # Observability - OTEL Collector for comprehensive tracing
-  otel_endpoint = "https://otel-collector-dev-240287924786.australia-southeast1.run.app"
+  otel_endpoint = "https://otel-collector-dev-kx62qbq7iq-ts.a.run.app"
 
   # Monitoring and Alerting
   enable_alerting       = var.enable_alerting
@@ -279,7 +279,7 @@ module "form-web-bff" {
   rate_limit_window_ms = 60000
 
   # Observability - OTEL Collector for comprehensive tracing
-  otel_endpoint = "https://otel-collector-dev-240287924786.australia-southeast1.run.app"
+  otel_endpoint = "https://otel-collector-dev-kx62qbq7iq-ts.a.run.app"
 
   # Public access for dev environment
   allow_unauthenticated = true
