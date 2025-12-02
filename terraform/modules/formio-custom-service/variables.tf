@@ -123,6 +123,12 @@ variable "token_public_key_secret_id" {
   type        = string
 }
 
+variable "frontend_url" {
+  description = "Frontend application URL for CORS and redirect configuration"
+  type        = string
+  default     = ""
+}
+
 # =============================================================================
 # ENHANCED FILE UPLOAD CONFIGURATION
 # =============================================================================
@@ -505,6 +511,16 @@ variable "dns_managed_zone" {
 
 variable "dns_name" {
   description = "DNS record name"
+  type        = string
+  default     = ""
+}
+
+# =============================================================================
+# OBSERVABILITY CONFIGURATION
+# =============================================================================
+
+variable "otel_endpoint" {
+  description = "OpenTelemetry collector endpoint (empty to disable)"
   type        = string
   default     = ""
 }

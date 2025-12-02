@@ -144,6 +144,12 @@ locals {
       value        = var.project_id
       value_source = null
     },
+    # GCS bucket name for TUS uploads (same as FORMIO_S3_BUCKET but explicit for TUS)
+    {
+      name         = "GCS_BUCKET_NAME"
+      value        = var.storage_bucket_name
+      value_source = null
+    },
     # Performance and Security
     {
       name         = "NODE_ENV"
@@ -221,23 +227,40 @@ locals {
     # Token keys from Secret Manager (Form.io expects these exact names)
     {
       name  = "TOKEN_PRIVATE_KEY_V1"
-      value = null
-      value_source = {
+      value = var.token_private_key_secret_id != null ? null : ""
+      value_source = var.token_private_key_secret_id != null ? {
         secret_key_ref = {
           secret  = var.token_private_key_secret_id
           version = "latest"
         }
-      }
+      } : null
     },
     {
       name  = "TOKEN_PUBLIC_KEY_V1"
-      value = null
-      value_source = {
+      value = var.token_public_key_secret_id != null ? null : ""
+      value_source = var.token_public_key_secret_id != null ? {
         secret_key_ref = {
           secret  = var.token_public_key_secret_id
           version = "latest"
         }
-      }
+      } : null
+    },
+    # Frontend URL for CORS and redirect configuration (required for production validation)
+    {
+      name         = "FRONTEND_URL"
+      value        = var.frontend_url
+      value_source = null
+    },
+    # OpenTelemetry configuration for comprehensive observability
+    {
+      name         = "OTEL_EXPORTER_OTLP_ENDPOINT"
+      value        = var.otel_endpoint
+      value_source = null
+    },
+    {
+      name         = "OTEL_SERVICE_NAME"
+      value        = local.service_name_full
+      value_source = null
     }
   ]
 
@@ -293,10 +316,11 @@ resource "google_cloud_run_v2_service" "formio_custom" {
 
     containers {
       name = "formio-custom"
-      # Use custom image from Google Container Registry (GCR)
+      # Use custom image from Artifact Registry (preferred over GCR)
       # Built by GitHub Actions workflow (.github/workflows/build-formio-custom.yml)
       # Image tags: {version} (immutable), {major}.{minor} (mutable), {major} (mutable), latest
-      image = "gcr.io/${var.project_id}/formio-custom:${var.custom_image_tag}"
+      # NOTE: Uses Artifact Registry for consistent architecture (linux/amd64) and GCP best practices
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/formio-custom/formio-custom:${var.custom_image_tag}"
 
       ports {
         name           = "http1"
@@ -338,7 +362,7 @@ resource "google_cloud_run_v2_service" "formio_custom" {
           port = local.container_port
         }
         failure_threshold     = 3
-        initial_delay_seconds = 30  # Form.io needs time to download/install client
+        initial_delay_seconds = 30 # Form.io needs time to download/install client
         period_seconds        = 5
         timeout_seconds       = 5
       }
@@ -395,7 +419,7 @@ resource "google_project_iam_member" "formio_custom_roles" {
     "roles/logging.logWriter",            # Write logs
     "roles/monitoring.metricWriter",      # Write metrics
     "roles/cloudtrace.agent",             # Write traces
-    "roles/storage.objectViewer",         # Access GCS bucket
+    "roles/storage.objectAdmin",          # Read/write GCS bucket for TUS uploads
   ])
 
   project = var.project_id
@@ -427,14 +451,14 @@ resource "google_secret_manager_secret_iam_member" "formio_custom_secrets" {
 
 # Backend service for Cloud Load Balancer integration
 resource "google_compute_backend_service" "formio_custom" {
-  project     = var.project_id
-  name        = local.backend_service_name
-  port_name   = "http"
-  protocol    = "HTTP"
-  timeout_sec = var.request_timeout
-
-  # Health check configuration
-  health_checks = [google_compute_health_check.formio_custom.id]
+  project   = var.project_id
+  name      = local.backend_service_name
+  protocol  = "HTTP"
+  # NOTE: Serverless NEGs (Cloud Run) don't support:
+  # - port_name (removed)
+  # - timeout_sec (removed)
+  # - health_checks (removed)
+  # These are managed by Cloud Run natively
 
   # CDN configuration for performance optimization
   enable_cdn = true
@@ -573,8 +597,7 @@ resource "google_monitoring_alert_policy" "formio_custom_error_rate" {
       comparison = "COMPARISON_GT"
       duration   = "900s"
       trigger {
-        count   = 1
-        percent = 100
+        count = 1
       }
       threshold_value = var.error_rate_threshold
     }
@@ -604,8 +627,7 @@ resource "google_monitoring_alert_policy" "formio_custom_latency" {
       comparison = "COMPARISON_GT"
       duration   = "900s"
       trigger {
-        count   = 1
-        percent = 100
+        count = 1
       }
       threshold_value = var.latency_threshold / 1000 # Convert ms to seconds
     }

@@ -25,6 +25,8 @@ provider "google-beta" {
 }
 
 provider "mongodbatlas" {
+  public_key  = var.mongodb_atlas_public_key
+  private_key = var.mongodb_atlas_private_key
 }
 
 locals {
@@ -69,43 +71,22 @@ module "storage" {
 }
 
 module "mongodb_atlas" {
-  source = "../../modules/mongodb-atlas-m30"
+  source = "../../modules/mongodb-atlas"
 
   project_id  = var.project_id
   environment = var.environment
   labels      = local.common_labels
 
   # MongoDB Atlas Project Configuration
-  atlas_project_name = "${var.service_name}-${var.environment}-m30"
+  atlas_project_name = "${var.service_name}-${var.environment}-flex"
   atlas_org_id       = var.mongodb_atlas_org_id
 
-  # M30 Dedicated Cluster Configuration
-  cluster_name                   = "formio-cluster-${var.environment}-m30"
-  cluster_tier                   = "M30"
-  backing_provider_name          = "GCP"
-  atlas_region_name              = "AUSTRALIA_SOUTHEAST_1"
-  mongodb_version                = "7.0"
+  # Flex Cluster Configuration (Serverless - pay per use, cheapest option)
+  # Testing AWS as backing provider - Australia (Sydney)
+  cluster_name                   = "formio-cluster-${var.environment}-flex"
+  backing_provider_name          = "AWS"
+  atlas_region_name              = "AP_SOUTHEAST_2"
   termination_protection_enabled = var.environment == "prod"
-
-  # Backup Configuration
-  backup_enabled               = true
-  pit_enabled                  = true
-  auto_scaling_disk_gb_enabled = true
-
-  # Advanced Configuration
-  javascript_enabled                   = true
-  oplog_size_mb                        = 2048
-  sample_size_bi_connector             = 1000
-  sample_refresh_interval_bi_connector = 300
-
-  # VPC Peering Configuration (optional for private connectivity)
-  enable_vpc_peering = false # Set to true to enable VPC peering
-  # vpc_network_name   = data.terraform_remote_state.central_infra.outputs.vpc_network_name
-  # atlas_cidr_block   = "192.168.248.0/21"
-
-  # IP Access List Configuration
-  cloud_nat_static_ips      = [] # Add Cloud NAT static IPs when available
-  additional_ip_access_list = {} # Will fall back to 0.0.0.0/0 for now
 
   # Database User Configuration
   admin_username            = var.mongodb_admin_username
@@ -151,9 +132,9 @@ module "formio-custom" {
   formio_db_secret_secret_id     = module.secrets.formio_db_secret_secret_id
   formio_root_email              = var.formio_root_email
   formio_root_password_secret_id = module.secrets.formio_root_password_secret_id
-  # TODO: Restore these once secrets module outputs are configured
-  token_public_key_secret_id  = null # module.secrets.token_public_key_v1_secret_id
-  token_private_key_secret_id = null # module.secrets.token_private_key_v1_secret_id
+  # Token keys for JWT signing (secrets exist in Secret Manager)
+  token_public_key_secret_id  = "dss-formio-api-token-public-key-v1-dev"
+  token_private_key_secret_id = "dss-formio-api-token-private-key-v1-dev"
 
   # Enhanced File Upload Configuration
   enable_async_gcs_upload   = var.enable_async_gcs_upload
@@ -221,6 +202,9 @@ module "formio-custom" {
   dns_managed_zone  = var.dns_managed_zone
   dns_name          = var.dns_name
 
+  # Observability - OTEL Collector for comprehensive tracing
+  otel_endpoint = "https://otel-collector-dev-240287924786.australia-southeast1.run.app"
+
   # Monitoring and Alerting
   enable_alerting       = var.enable_alerting
   error_rate_threshold  = var.error_rate_threshold
@@ -258,8 +242,8 @@ module "form-web-bff" {
   environment = var.environment
   labels      = local.common_labels
 
-  # Docker image from Cloud Build
-  image_url = "gcr.io/${var.project_id}/form-web-bff:latest"
+  # Docker image from Artifact Registry (must match cloudbuild.yaml)
+  image_url = "australia-southeast1-docker.pkg.dev/${var.project_id}/formio-services/form-web-bff:latest"
 
   # Port configuration (variable-based, not hardcoded)
   container_port = 3002
@@ -287,15 +271,15 @@ module "form-web-bff" {
   node_env  = "production"
   log_level = "info"
 
-  # CORS configuration (allow test app)
-  cors_origin = "http://localhost:64849,https://tokenized-forms.pages.dev,https://*.tokenized-forms.pages.dev"
+  # CORS configuration (allow local dev and basedforms.io domains)
+  cors_origin = "http://localhost:64849,https://forms.basedforms.io,https://basedforms.io,https://www.basedforms.io,https://*.basedforms.pages.dev"
 
   # Rate limiting (relaxed for dev)
   rate_limit_max       = 1000
   rate_limit_window_ms = 60000
 
-  # Observability (optional in dev)
-  otel_endpoint = ""
+  # Observability - OTEL Collector for comprehensive tracing
+  otel_endpoint = "https://otel-collector-dev-240287924786.australia-southeast1.run.app"
 
   # Public access for dev environment
   allow_unauthenticated = true
@@ -346,7 +330,8 @@ module "formio-enterprise" {
   authorized_members = var.authorized_members
 
   # PDF Server URL for Enterprise PDF generation
-  pdf_server_url = var.deploy_pdf_server ? module.pdf-server[0].service_url : ""
+  # NOTE: Set to empty to break circular dependency - will be configured post-deployment
+  pdf_server_url = ""
 
   depends_on = [
     module.storage,
