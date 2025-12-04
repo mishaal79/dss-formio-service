@@ -30,13 +30,15 @@ module "formio_custom_service" {
   region      = var.region
   environment = var.environment
 
-  # Docker image configuration (local development)
-  # Use 'dev-latest' tag for rapid iteration
-  # Build and deploy with: make build-deploy (from repository root)
-  custom_image_tag = "dev-latest"
+  # Docker image configuration
+  # Use semantic versioning or build numbers for production tracking
+  # Build: gcloud builds submit --config=formio/cloudbuild.yaml --substitutions=_TAG=10
+  # Deploy: cd dss-formio-service/terraform/environments/dev-formio-custom && make plan && make deploy
+  custom_image_tag = "11"
 
   # Secret Manager secret IDs (required)
-  mongodb_connection_string_secret_id = "dss-formio-api-mongodb-custom-connection-string-dev"
+  # Using enterprise connection string for MongoDB Atlas cluster
+  mongodb_connection_string_secret_id = "dss-formio-api-mongodb-enterprise-connection-string-dev"
   formio_jwt_secret_secret_id         = "dss-formio-api-jwt-secret-dev"
   formio_db_secret_secret_id          = "dss-formio-api-db-secret-dev"
   formio_root_password_secret_id      = "dss-formio-api-root-password-dev"

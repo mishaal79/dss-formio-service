@@ -14,7 +14,7 @@
 #   make health   - Check service health
 #
 
-.PHONY: help init plan deploy destroy output status logs health clean validate fmt
+.PHONY: help init plan deploy destroy output status logs health clean validate fmt conftest policy-check
 
 # Default target
 .DEFAULT_GOAL := help
@@ -24,6 +24,10 @@ PROJECT_ID := erlich-dev
 REGION := australia-southeast1
 ENVIRONMENT := dev
 SERVICE_NAME := formio-custom-$(ENVIRONMENT)
+
+# Policy path (relative to repo root)
+REPO_ROOT := $(shell git rev-parse --show-toplevel)
+POLICY_DIR := $(REPO_ROOT)/policy
 
 # Colors for output
 BLUE := \033[0;34m
@@ -57,7 +61,34 @@ fmt: ## Format Terraform files
 	terraform fmt -recursive
 	@echo "$(GREEN)✓ Files formatted$(NC)"
 
-plan: validate ## Generate Terraform deployment plan
+conftest: ## Run OPA/conftest policy tests
+	@echo "$(BLUE)Running conftest policy tests...$(NC)"
+	@if [ ! -d "$(POLICY_DIR)" ]; then \
+		echo "$(RED)✗ Policy directory not found: $(POLICY_DIR)$(NC)"; \
+		exit 1; \
+	fi
+	@cd $(POLICY_DIR) && opa test tests/ cloud-run/ lib/ data/ -v
+	@echo "$(GREEN)✓ Policy tests passed$(NC)"
+
+policy-check: ## Validate deployment config against OPA policies
+	@echo "$(BLUE)Validating deployment against OPA policies...$(NC)"
+	@echo "$(BLUE)Fetching current Cloud Run service config...$(NC)"
+	@gcloud run services describe $(SERVICE_NAME) \
+		--region=$(REGION) \
+		--project=$(PROJECT_ID) \
+		--format=yaml > /tmp/cloudrun-service.yaml 2>/dev/null || \
+		echo "$(YELLOW)⚠ Service not yet deployed, skipping live validation$(NC)"
+	@if [ -f /tmp/cloudrun-service.yaml ]; then \
+		echo "$(BLUE)Running conftest against live service config...$(NC)"; \
+		conftest test /tmp/cloudrun-service.yaml \
+			--policy $(POLICY_DIR)/cloud-run \
+			--data $(POLICY_DIR)/data \
+			--all-namespaces || \
+		(echo "$(RED)✗ Policy validation failed$(NC)" && exit 1); \
+		echo "$(GREEN)✓ Policy validation passed$(NC)"; \
+	fi
+
+plan: validate conftest ## Generate Terraform deployment plan (validates policies first)
 	@echo "$(BLUE)Generating Terraform plan...$(NC)"
 	terraform plan -out=tfplan
 	@echo ""
