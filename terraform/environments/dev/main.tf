@@ -29,6 +29,13 @@ provider "mongodbatlas" {
   private_key = var.mongodb_atlas_private_key
 }
 
+# Discord provider for creating channels and webhooks
+# Requires DISCORD_TOKEN environment variable with bot token
+# Bot setup: https://discord.com/developers/applications
+provider "discord" {
+  # Token is read from DISCORD_TOKEN environment variable
+}
+
 locals {
   common_labels = {
     environment = var.environment
@@ -202,8 +209,11 @@ module "formio-custom" {
   dns_managed_zone  = var.dns_managed_zone
   dns_name          = var.dns_name
 
-  # Observability - OTEL Collector for comprehensive tracing
-  otel_endpoint = "https://otel-collector-dev-kx62qbq7iq-ts.a.run.app"
+  # Observability - SigNoz Cloud for comprehensive tracing
+  # SigNoz Cloud ingest endpoint: https://ingest.{region}.signoz.cloud:443
+  otel_endpoint                 = "https://ingest.us.signoz.cloud:443"
+  signoz_access_token_secret_id = "signoz-access-token"
+  otel_sampling_rate            = 1.0 # 100% sampling for dev
 
   # Monitoring and Alerting
   enable_alerting       = var.enable_alerting
@@ -278,8 +288,10 @@ module "form-web-bff" {
   rate_limit_max       = 1000
   rate_limit_window_ms = 60000
 
-  # Observability - OTEL Collector for comprehensive tracing
-  otel_endpoint = "https://otel-collector-dev-kx62qbq7iq-ts.a.run.app"
+  # Observability - SigNoz Cloud for comprehensive tracing
+  otel_endpoint                 = "https://ingest.us.signoz.cloud:443"
+  signoz_access_token_secret_id = "signoz-access-token"
+  otel_sampling_rate            = 1.0 # 100% sampling for dev
 
   # Public access for dev environment
   allow_unauthenticated = true
@@ -339,6 +351,100 @@ module "formio-enterprise" {
   ]
 }
 
+
+# =============================================================================
+# DISCORD SERVER INFRASTRUCTURE
+# =============================================================================
+# Creates Discord channels and webhooks via Terraform
+# Requires: DISCORD_TOKEN environment variable with bot token
+# Bot setup: https://discord.com/developers/applications
+
+module "discord-server" {
+  count  = var.enable_discord_alerts && var.discord_server_id != "" ? 1 : 0
+  source = "../../modules/discord-server"
+
+  discord_server_id = var.discord_server_id
+  environment       = var.environment
+  category_position = 0
+  restrict_posting  = true # Only webhooks can post to alert channels
+}
+
+# =============================================================================
+# DISCORD ALERTS PROXY
+# =============================================================================
+# Transforms SigNoz/Alertmanager webhooks to Discord rich embeds
+# Architecture: SigNoz → Webhook → Discord Alert Proxy (Cloud Run) → Discord Channels
+
+module "discord-alerts" {
+  count  = var.enable_discord_alerts ? 1 : 0
+  source = "../../modules/discord-alerts"
+
+  project_id  = var.project_id
+  region      = var.region
+  environment = var.environment
+  labels      = local.common_labels
+
+  # Container image from Artifact Registry
+  image_url = "australia-southeast1-docker.pkg.dev/${var.project_id}/formio-services/discord-ops-bot:latest"
+
+  # Discord Bot Configuration (v2 - channel-based routing)
+  discord_bot_token  = var.discord_bot_token
+  discord_client_id  = var.discord_client_id
+  discord_guild_id   = var.discord_guild_id
+
+  # Channel-based alert routing (bot posts directly to channels)
+  discord_channel_alerts = var.discord_channel_alerts
+
+  # Webhook authentication
+  webhook_secret = var.webhook_secret
+
+  # SigNoz URL for alert links in Discord embeds
+  signoz_url = "https://dsselectrical.us.signoz.cloud"
+
+  # DNS Configuration
+  create_dns_record = true
+  dns_project_id    = var.dns_project_id
+  dns_managed_zone  = "dev-cloud-dsselectrical"
+  dns_name          = "discord-bot.dev.cloud.dsselectrical.com.au"
+
+  # Allow unauthenticated access for SigNoz webhook delivery
+  # (authentication handled by WEBHOOK_SECRET bearer token)
+  allow_unauthenticated = true
+
+  # Logging
+  log_level = "info"
+
+  # Monitoring
+  enable_monitoring     = true
+  notification_channels = var.notification_channels
+
+  depends_on = [
+    module.secrets
+  ]
+}
+
+# =============================================================================
+# SIGNOZ NOTIFICATION CHANNEL
+# =============================================================================
+# Configures SigNoz to send alerts to the Discord Ops Bot webhook
+# Uses REST API since SigNoz Terraform provider doesn't have notification_channel resource
+
+module "signoz-discord-channel" {
+  count  = var.enable_discord_alerts ? 1 : 0
+  source = "../../modules/signoz-notification-channel"
+
+  signoz_url     = "https://dsselectrical.us.signoz.cloud"
+  signoz_api_key = var.signoz_api_key
+
+  channel_name   = "discord-alerts"
+  webhook_url    = "${module.discord-alerts[0].service_url}/webhook"
+  webhook_secret = var.webhook_secret
+  environment    = var.environment
+
+  depends_on = [
+    module.discord-alerts
+  ]
+}
 
 # =============================================================================
 # PDF SERVER DEPLOYMENT

@@ -618,6 +618,64 @@ variable "notification_channels" {
   default     = []
 }
 
+# Discord Alerts Configuration
+variable "enable_discord_alerts" {
+  description = "Enable Discord Alert Proxy for SigNoz alert notifications"
+  type        = bool
+  default     = true
+}
+
+variable "discord_server_id" {
+  description = "Discord server (guild) ID for creating alert channels. Leave empty to skip Discord infrastructure creation and manage webhooks manually via Secret Manager."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.discord_server_id == "" || can(regex("^[0-9]+$", var.discord_server_id))
+    error_message = "Discord server ID must be empty or a numeric string (snowflake ID)."
+  }
+}
+
+# Discord Bot Configuration (v2 - channel-based routing)
+variable "discord_bot_token" {
+  description = "Discord bot token for slash commands and channel posting"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "discord_client_id" {
+  description = "Discord application client ID"
+  type        = string
+  default     = ""
+}
+
+variable "discord_guild_id" {
+  description = "Discord server (guild) ID for slash command registration"
+  type        = string
+  default     = ""
+}
+
+variable "discord_channel_alerts" {
+  description = "Discord channel ID for all alerts (single channel mode)"
+  type        = string
+  default     = ""
+}
+
+variable "webhook_secret" {
+  description = "Bearer token for webhook authentication from SigNoz"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "signoz_api_key" {
+  description = "SigNoz API key for managing notification channels"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "debug_enabled" {
   description = "Enable debug logging"
   type        = bool
@@ -629,4 +687,18 @@ variable "gcs_project_id" {
   description = "GCP project ID for GCS operations"
   type        = string
   default     = "" # Uses project_id if empty
+}
+
+# MongoDB Atlas API Credentials (required by root module, not used by Discord)
+variable "mongodb_atlas_public_key" {
+  description = "MongoDB Atlas API public key"
+  type        = string
+  default     = ""
+}
+
+variable "mongodb_atlas_private_key" {
+  description = "MongoDB Atlas API private key"
+  type        = string
+  default     = ""
+  sensitive   = true
 }

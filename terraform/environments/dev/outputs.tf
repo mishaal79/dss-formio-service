@@ -394,3 +394,57 @@ output "deployment_status" {
     region             = var.region
   }
 }
+
+# =============================================================================
+# DISCORD ALERTS OUTPUTS
+# =============================================================================
+
+output "discord_alerts_service_url" {
+  description = "Discord Alert Proxy service URL"
+  value       = var.enable_discord_alerts && length(module.discord-alerts) > 0 ? module.discord-alerts[0].service_url : null
+}
+
+output "discord_alerts_webhook_endpoint" {
+  description = "Discord Alert Proxy webhook endpoint for SigNoz configuration"
+  value       = var.enable_discord_alerts && length(module.discord-alerts) > 0 ? module.discord-alerts[0].webhook_endpoint : null
+}
+
+output "discord_alerts_secret_id" {
+  description = "Secret Manager secret ID for Discord webhook URL"
+  value       = var.enable_discord_alerts && length(module.discord-alerts) > 0 ? module.discord-alerts[0].discord_webhook_secret_id : null
+}
+
+output "signoz_notification_config" {
+  description = "Configuration for SigNoz webhook notification channel"
+  value       = var.enable_discord_alerts && length(module.discord-alerts) > 0 ? module.discord-alerts[0].signoz_notification_config : null
+}
+
+# =============================================================================
+# DISCORD SERVER OUTPUTS
+# =============================================================================
+
+output "discord_category_id" {
+  description = "Discord Monitoring category ID"
+  value       = var.discord_server_id != "" && length(module.discord-server) > 0 ? module.discord-server[0].category_id : null
+}
+
+output "discord_channel_ids" {
+  description = "Discord alert channel IDs by severity"
+  value       = var.discord_server_id != "" && length(module.discord-server) > 0 ? module.discord-server[0].channel_ids : null
+}
+
+output "discord_webhook_ids" {
+  description = "Discord webhook IDs by severity (for reference/import)"
+  value       = var.discord_server_id != "" && length(module.discord-server) > 0 ? module.discord-server[0].webhook_ids : null
+}
+
+output "discord_infrastructure_status" {
+  description = "Discord infrastructure provisioning status"
+  value = {
+    enabled           = var.enable_discord_alerts
+    server_id_set     = var.discord_server_id != ""
+    channels_created  = var.discord_server_id != "" && length(module.discord-server) > 0
+    webhooks_created  = var.discord_server_id != "" && length(module.discord-server) > 0
+    proxy_deployed    = var.enable_discord_alerts && length(module.discord-alerts) > 0
+  }
+}
